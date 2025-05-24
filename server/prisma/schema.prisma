@@ -1,0 +1,155 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  nombres   String
+  apellidos String
+  dni       String   @unique
+  email     String   @unique
+  password  String
+  rol       Rol      @default(admin)
+  direccion String?
+  telefono  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  aulas         AulaProfesor[]
+  asistencias   Asistencia[]
+  incidencias   Incidencia[]
+}
+
+enum Rol {
+  admin
+  profesor
+}
+
+model Estudiante {
+  id              String    @id @default(uuid())
+  nombres         String
+  apellidos       String
+  dni             String    @unique
+  apoderado       String?
+  email           String?   @unique
+  telefono        String?
+  sexo            String?
+  fechaNacimiento DateTime?
+  aulaId          String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  aula               Aula                @relation(fields: [aulaId], references: [id])
+  asistenciaDetalles AsistenciaDetalle[]
+  incidenciaDetalles IncidenciaDetalle[]
+}
+
+model Aula {
+  id        String   @id @default(uuid())
+  nombre    String   @unique
+  nivel     String   @default("Primaria")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  estudiantes Estudiante[]
+  profesores  AulaProfesor[]
+  asistencias Asistencia[]
+}
+
+model AulaProfesor {
+  id         String   @id @default(uuid())
+  aulaId     String
+  profesorId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  aula     Aula @relation(fields: [aulaId], references: [id])
+  profesor User @relation(fields: [profesorId], references: [id])
+
+  @@unique([profesorId, aulaId])
+}
+
+model Asistencia {
+  id         String   @id @default(uuid())
+  fecha      DateTime @default(now())
+  profesorId String
+  aulaId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  profesor User                @relation(fields: [profesorId], references: [id])
+  aula     Aula                @relation(fields: [aulaId], references: [id])
+  detalles AsistenciaDetalle[]
+}
+
+model AsistenciaDetalle {
+  id           String           @id @default(uuid())
+  asistenciaId String
+  estudianteId String
+  estado       EstadoAsistencia
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  asistencia Asistencia @relation(fields: [asistenciaId], references: [id])
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id])
+
+  @@unique([asistenciaId, estudianteId])
+}
+
+enum EstadoAsistencia {
+  presente
+  falta
+  tardanza
+  falta_justificada
+  tardanza_justificada
+}
+
+model Incidencia {
+  id               String   @id @default(uuid())
+  fecha            DateTime @default(now())
+  lugar            String
+  tipoIncidencia   String
+  descripcion      String
+  medidasAdoptadas String?
+  userId           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user     User                @relation(fields: [userId], references: [id])
+  detalles IncidenciaDetalle[]
+}
+
+model IncidenciaDetalle {
+  id           String   @id @default(uuid())
+  incidenciaId String
+  estudianteId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  incidencia Incidencia @relation(fields: [incidenciaId], references: [id])
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id])
+
+  @@unique([incidenciaId, estudianteId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}

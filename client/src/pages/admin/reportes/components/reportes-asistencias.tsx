@@ -1,0 +1,351 @@
+import { useState, useEffect } from "react";
+import { useAllAsistencias } from "@/hooks/useAsistencias";
+import { useAulas } from "@/hooks/useAulas";
+import { useEstudiantes } from "@/hooks/useEstudiantes";
+import { AsistenciaDetalle, Estudiante, Asistencia } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Heading } from "@/components/heading";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { FileDown, Calendar as CalendarIcon, X } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+  format,
+  isWithinInterval,
+  subDays,
+  startOfDay,
+  endOfDay,
+} from "date-fns";
+import { es } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+
+const AsistenciasExport = () => {
+  const { data: asistencias, isLoading: isAsistenciasLoading } =
+    useAllAsistencias();
+  const { data: aulas, isLoading: isAulasLoading } = useAulas();
+  const { data: estudiantes, isLoading: isEstudiantesLoading } =
+    useEstudiantes();
+
+  const [selectedAulaId, setSelectedAulaId] = useState<string>("todos");
+  const [selectedEstudianteId, setSelectedEstudianteId] =
+    useState<string>("todos");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dateRange, setDateRange] = useState<string>("all");
+  const [filteredEstudiantes, setFilteredEstudiantes] = useState<Estudiante[]>(
+    []
+  );
+  const [filteredDetalles, setFilteredDetalles] = useState<any[]>([]); // eslint-disable-line
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  // FUNCIÓN AGREGADA: Para manejar fechas sin problemas de zona horaria
+  const formatearFechaSolo = (fechaString: string) => {
+    const [year, month, day] = fechaString.split(' ')[0].split('-');
+    const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return format(fecha, "dd/MM/yyyy", { locale: es });
+  };
+
+  // FUNCIÓN AGREGADA: Para crear objeto Date sin problemas de zona horaria
+  const crearFechaSinZonaHoraria = (fechaString: string) => {
+    const [year, month, day] = fechaString.split(' ')[0].split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  };
+
+  useEffect(() => {
+    if (!estudiantes) return;
+
+    if (selectedAulaId === "todos") {
+      setFilteredEstudiantes(estudiantes);
+    } else {
+      setFilteredEstudiantes(
+        estudiantes.filter((e: Estudiante) => e.aulaId === selectedAulaId)
+      );
+    }
+    setSelectedEstudianteId("todos");
+  }, [selectedAulaId, estudiantes]);
+
+  useEffect(() => {
+    if (!asistencias) return;
+
+    const detalles = asistencias.flatMap((asistencia: Asistencia) =>
+      asistencia.detalles.map((detalle: AsistenciaDetalle) => ({
+        ...detalle,
+        fecha: asistencia.fecha,
+        aula: asistencia.aula,
+        estudiante: detalle.estudiante,
+      }))
+    );
+
+    let filtered = [...detalles];
+
+    if (selectedAulaId !== "todos") {
+      filtered = filtered.filter(
+        (det) => det.estudiante.aulaId === selectedAulaId
+      );
+    }
+
+    if (selectedEstudianteId !== "todos") {
+      filtered = filtered.filter(
+        (det) => det.estudianteId === selectedEstudianteId
+      );
+    }
+
+    if (dateRange !== "all") {
+      const today = new Date();
+      let startDate: Date;
+      let endDate = endOfDay(today);
+
+      switch (dateRange) {
+        case "today":
+          startDate = startOfDay(today);
+          break;
+        case "week":
+          startDate = startOfDay(subDays(today, 7));
+          break;
+        case "month":
+          startDate = startOfDay(subDays(today, 30));
+          break;
+        case "custom":
+          if (selectedDate) {
+            startDate = startOfDay(selectedDate);
+            endDate = endOfDay(selectedDate);
+          } else {
+            startDate = new Date(0);
+          }
+          break;
+        default:
+          startDate = new Date(0);
+      }
+
+      filtered = filtered.filter((det) => {
+        const fecha = crearFechaSinZonaHoraria(det.fecha); // CAMBIADO: Usar función helper
+        return isWithinInterval(fecha, { start: startDate, end: endDate });
+      });
+    }
+
+    setFilteredDetalles(filtered);
+  }, [
+    asistencias,
+    selectedAulaId,
+    selectedEstudianteId,
+    dateRange,
+    selectedDate,
+  ]);
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case "presente":
+        return "bg-green-100 text-green-800";
+      case "falta":
+        return "bg-red-100 text-red-800";
+      case "tardanza":
+        return "bg-yellow-100 text-yellow-800";
+      case "falta_justificada":
+        return "bg-blue-100 text-blue-800";
+      case "tardanza_justificada":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const exportToPDF = () => {
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    pdf.setFontSize(18);
+    pdf.text("Informe de Asistencias", pageWidth / 2, 20, { align: "center" });
+    pdf.setFontSize(11);
+
+    const tableData = filteredDetalles.map((det) => [
+      formatearFechaSolo(det.fecha), // LÍNEA CAMBIADA: Usar la función helper
+      `${det.estudiante.nombres} ${det.estudiante.apellidos}`,
+      det.aula?.nombre || "N/A",
+      det.estado,
+    ]);
+
+    autoTable(pdf, {
+      startY: 30,
+      head: [["Fecha", "Estudiante", "Aula", "Estado"]],
+      body: tableData,
+    });
+
+    pdf.save(`Informe_Asistencias_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+  };
+
+  if (isAsistenciasLoading || isAulasLoading || isEstudiantesLoading)
+    return <div>Cargando datos...</div>;
+
+  return (
+    <div className="flex-col">
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <Heading
+            title="Exportar Asistencias"
+            description="Filtra y exporta el registro de asistencias"
+          />
+          <div className="flex gap-2">
+            <Button onClick={exportToPDF}>
+              <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
+            </Button>
+          </div>
+        </div>
+        <Separator />
+
+        {/* Filtros */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="text-sm font-medium">Aula</label>
+            <Select value={selectedAulaId} onValueChange={setSelectedAulaId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un aula..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas</SelectItem>
+                {aulas?.map((aula) => (
+                  <SelectItem key={aula.id} value={aula.id}>
+                    {aula.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Estudiante</label>
+            <Select
+              value={selectedEstudianteId}
+              onValueChange={setSelectedEstudianteId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un estudiante..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                {filteredEstudiantes?.map((est) => (
+                  <SelectItem key={est.id} value={est.id}>
+                    {`${est.nombres} ${est.apellidos}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Rango de Fecha</label>
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Rango de fecha" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="today">Hoy</SelectItem>
+                <SelectItem value="week">Últimos 7 días</SelectItem>
+                <SelectItem value="month">Últimos 30 días</SelectItem>
+                <SelectItem value="custom">Fecha específica</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {dateRange === "custom" && (
+            <div>
+              <label className="text-sm font-medium">Fecha específica</label>
+              <div className="flex items-center">
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? (
+                        format(selectedDate, "PPP", { locale: es })
+                      ) : (
+                        <span>Seleccionar fecha</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate || undefined} // This is correct: selected prop expects Date | undefined
+                      onSelect={(dateValue: Date | undefined) => {
+                        setSelectedDate(dateValue || null); // Convert undefined to null
+                        setIsCalendarOpen(false); // Close popover on selection
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {selectedDate && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedDate(null)}
+                    className="ml-2"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Card>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Estudiante</TableHead>
+                  <TableHead>Aula</TableHead>
+                  <TableHead>Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDetalles.map((det) => (
+                  <TableRow key={det.id}>
+                    <TableCell>
+                      {formatearFechaSolo(det.fecha)} {/* LÍNEA CAMBIADA: Usar la función helper */}
+                    </TableCell>
+                    <TableCell>{`${det.estudiante.nombres} ${det.estudiante.apellidos}`}</TableCell>
+                    <TableCell>{det.aula?.nombre || "N/A"}</TableCell>
+                    <TableCell>
+                      <Badge className={getEstadoColor(det.estado)}>
+                        {det.estado}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default AsistenciasExport;

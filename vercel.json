@@ -1,8 +1,9 @@
+
 {
   "version": 2,
   "functions": {
     "server/index.ts": {
-      "runtime": "node@18.x",
+      "runtime": "nodejs18.x",
       "memory": 1024,
       "maxDuration": 10
     }
@@ -14,30 +15,35 @@
       "headers": {
         "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload"
       },
-      "continue": true 
+      "continue": true
     },
     
     {
-      "src": "/(.*)/", 
+      "src": "/(.*)/",
       "headers": {
-        "Location": "$1" 
+        "Location": "$1"
       },
-      "status": 308, 
+      "status": 308,
       "continue": true
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1",
-      "status": 200,
+      "src": "/(.*)\\.html$", 
+      "headers": {
+        "Location": "/$1" 
+      },
+      "status": 301,
       "continue": true
     },
 
+
+    
     {
       "src": "/api/(.*)",
       "dest": "/server/index.ts",
       "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     },
 
+    
     {
       "src": "/(.*)",
       "dest": "/client/$1"

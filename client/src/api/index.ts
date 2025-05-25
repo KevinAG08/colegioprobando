@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -12,6 +12,24 @@ api.interceptors.request.use((config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (
+    config.url &&
+    !config.url.startsWith('/api/') && 
+    (config.url.startsWith('/auth') ||
+     config.url.startsWith('/admin') ||
+     config.url.startsWith('/aulas') ||
+     config.url.startsWith('/profesores') ||
+     config.url.startsWith('/estudiantes') ||
+     config.url.startsWith('/incidencias') ||
+     config.url.startsWith('/asistencias') ||
+     config.url.startsWith('/dashboard'))
+  ) {
+
+    if (!BASE_URL.endsWith('/api') && !config.url.startsWith('/api/')) {
+        config.url = `/api${config.url}`;
+    }
   }
 
   return config;

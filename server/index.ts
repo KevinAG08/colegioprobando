@@ -16,10 +16,13 @@ dotenv.config();
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
 
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: CLIENT_ORIGIN, 
     credentials: true,
 }));
+
 app.use(cookieParser())
 app.use(express.json());
 
@@ -35,5 +38,3 @@ app.use("/dashboard", dashboardRoutes);
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 })
-
-

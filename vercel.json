@@ -1,9 +1,20 @@
 
 {
   "version": 2,
+  "builds": [ 
+    {
+      "src": "server/index.ts",
+      "use": "@vercel/node@2.0.12", 
+      "config": { "includeFiles": ["prisma/schema.prisma", "prisma/client/**/*"] } 
+    },
+    {
+      "src": "client/index.html", 
+      "use": "@vercel/static-build"
+    }
+  ],
   "functions": {
     "server/index.ts": {
-      "runtime": "nodejs18.x",
+      "runtime": "nodejs18.x", 
       "memory": 1024,
       "maxDuration": 10
     }
@@ -20,21 +31,14 @@
     
     {
       "src": "/(.*)/",
-      "headers": {
-        "Location": "$1"
-      },
       "status": 308,
-      "continue": true
+      "headers": { "Location": "$1" }
     },
     {
-      "src": "/(.*)\\.html$", 
-      "headers": {
-        "Location": "/$1" 
-      },
+      "src": "/(.*)\\.html$",
       "status": 301,
-      "continue": true
+      "headers": { "Location": "/$1" }
     },
-
 
     
     {

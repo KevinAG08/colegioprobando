@@ -9,7 +9,8 @@
     "skipLibCheck": true, // Skip type checking of declaration files (speeds up compilation)
     "forceConsistentCasingInFileNames": true, // Prevents case-sensitivity issues
     "resolveJsonModule": true, // Allows importing .json files
-    "lib": ["es2020"], // Agrega esto si no lo tienes. Asegura tipos para funcionalidades básicas de JS
+    "lib": ["es2020", "dom"], // Aunque es backend, a veces 'dom' es necesario por dependencias indirectas, pero 'es2020' y 'esnext' son más importantes. Podríamos probar solo "es2020" y "esnext".
+    "types": ["node", "express", "cors", "cookie-parser", "jsonwebtoken"], // Asegura que estos tipos se carguen explícitamente
     "typeRoots": ["./node_modules/@types"]
   },
   "include": ["./**/*.ts"], // Which files to include in compilation

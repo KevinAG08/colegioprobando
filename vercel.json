@@ -16,16 +16,6 @@
       ]
     }
   ],
-  "builds": [
-    {
-      "src": "client/index.html",
-      "use": "@vercel/static-build"
-    },
-    {
-      "src": "server/index.ts",
-      "use": "@vercel/node@2.0.1" 
-    }
-  ],
   "routes": [
    
     {

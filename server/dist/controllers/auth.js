@@ -1,0 +1,125 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.logout = exports.refreshToken = exports.login = void 0;
+const prismadb_1 = __importDefault(require("../utils/prismadb"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const generateTokens_1 = require("../utils/generateTokens");
+const sendRefreshToken_1 = require("../utils/sendRefreshToken");
+const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await prismadb_1.default.user.findUnique({
+            where: { email },
+            include: {
+                aulas: {
+                    include: {
+                        aula: true,
+                    },
+                },
+            },
+        });
+        const type = "user";
+        if (!user) {
+            res.status(401).json({ message: "Credenciales incorrectas!" });
+            return;
+        }
+        const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
+        if (!isPasswordValid) {
+            res.status(401).json({ message: "Credenciales incorrectas!" });
+            return;
+        }
+        const { accessToken, refreshToken } = await (0, generateTokens_1.generateTokens)(user, type);
+        (0, sendRefreshToken_1.sendRefreshToken)(res, refreshToken);
+        const { password: _, ...userWithoutPassword } = user;
+        res.json({
+            user: { ...userWithoutPassword, type },
+            accessToken,
+        });
+    }
+    catch (error) {
+        console.error("Error: ", error);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+};
+exports.login = login;
+const refreshToken = async (req, res) => {
+    try {
+        console.log("Procesando solicitud refresh-token");
+        console.log("Cookies recibidas");
+        const oldToken = req.cookies.refreshToken;
+        if (!oldToken) {
+            console.log("No se encontró refreshToken en las cookies");
+            res
+                .status(400)
+                .json({ message: "Token de actualización no proporcionado" });
+            return;
+        }
+        console.log("Buscando token en la base de datos: ", oldToken.substring(0, 10));
+        const foundToken = await prismadb_1.default.refreshToken.findUnique({
+            where: { token: oldToken },
+            include: { user: true },
+        });
+        if (!foundToken) {
+            console.log("Token no encontrado en la base de datos");
+            res.status(401).json({ message: "Token inválido o expirado" });
+            return;
+        }
+        console.log("Token encontrado en la base de datos, vence: ", foundToken.expiresAt);
+        if (new Date() > foundToken.expiresAt) {
+            console.log("Token expirado: ", foundToken.expiresAt);
+            await prismadb_1.default.refreshToken.delete({ where: { id: foundToken.id } });
+            res.status(401).json({ message: "Token expirado" });
+            return;
+        }
+        // Eliminar el token antiguo
+        await prismadb_1.default.refreshToken.delete({
+            where: { id: foundToken.id },
+        });
+        const user = foundToken.user;
+        const type = foundToken.userId ? "user" : "estudiante";
+        if (!user) {
+            console.error(`Inconsistencia de datos: RefreshToken ${foundToken.id} existe pero el usuario/estudiante asociado no.`);
+            res
+                .status(401)
+                .json({ message: "Token inválido (usuario asociado no encontrado)" });
+            return; // Salir
+        }
+        // Generar nuevos tokens
+        const newTokens = await (0, generateTokens_1.generateTokens)(user, type);
+        console.log("Tokens generados correctamente");
+        (0, sendRefreshToken_1.sendRefreshToken)(res, newTokens.refreshToken);
+        const { password: _, ...userWithoutPassword } = user;
+        console.log("Refresh exitoso, enviando nuevo accessToken");
+        res
+            .status(200)
+            .json({ accessToken: newTokens.accessToken, user: userWithoutPassword });
+    }
+    catch (error) {
+        console.error("Error: ", error);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+};
+exports.refreshToken = refreshToken;
+const logout = async (req, res) => {
+    try {
+        const token = req.cookies.refreshToken;
+        if (token) {
+            await prismadb_1.default.refreshToken.deleteMany({ where: { token } });
+        }
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            path: "/",
+        });
+        res.status(200).json({ message: "Sesión cerrada" });
+    }
+    catch (error) {
+        console.error("Error: ", error);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+};
+exports.logout = logout;

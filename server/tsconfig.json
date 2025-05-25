@@ -8,7 +8,9 @@
     "esModuleInterop": true, // Allows default imports from CommonJS modules
     "skipLibCheck": true, // Skip type checking of declaration files (speeds up compilation)
     "forceConsistentCasingInFileNames": true, // Prevents case-sensitivity issues
-    "resolveJsonModule": true // Allows importing .json files
+    "resolveJsonModule": true, // Allows importing .json files
+    "lib": ["es2020"], // Agrega esto si no lo tienes. Asegura tipos para funcionalidades básicas de JS
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": ["./**/*.ts"], // Which files to include in compilation
   "exclude": ["node_modules", "./dist"], // Which files/folders to exclude

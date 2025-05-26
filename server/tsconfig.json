@@ -8,9 +8,7 @@
     "esModuleInterop": true, // Allows default imports from CommonJS modules
     "skipLibCheck": true, // Skip type checking of declaration files (speeds up compilation)
     "forceConsistentCasingInFileNames": true, // Prevents case-sensitivity issues
-    "resolveJsonModule": true, // Allows importing .json files
-    "lib": ["es2020"], // Aunque es backend, a veces 'dom' es necesario por dependencias indirectas, pero 'es2020' y 'esnext' son más importantes. Podríamos probar solo "es2020" y "esnext".
-    "typeRoots": ["./node_modules/@types"]
+    "resolveJsonModule": true // Allows importing .json files
   },
   "include": ["./**/*.ts"], // Which files to include in compilation
   "exclude": ["node_modules", "./dist"], // Which files/folders to exclude

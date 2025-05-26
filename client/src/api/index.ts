@@ -1,9 +1,6 @@
-// client/src/index.ts
 import axios from "axios";
 
-// En desarrollo, el proxy de Vite redirigirá /api a http://localhost:5000.
-// En producción, Vercel gestionará las llamadas a /api en el mismo dominio.
-const BASE_URL = '/api'; // ¡Simplificado!
+const BASE_URL = "http://localhost:5000";
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -17,10 +14,6 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // No necesitas lógica compleja aquí si tu baseURL ya es '/api'
-  // y todas tus rutas de la API comienzan con /auth, /admin, etc.
-  // Axios automáticamente concatenará baseURL + config.url.
-  // Ejemplo: baseURL + '/auth/login' = '/api/auth/login'
   return config;
 });
 
@@ -56,7 +49,8 @@ api.interceptors.response.use(
       error.response?.status === 401 &&
       (error.response.data?.message === "Token expirado" ||
         error.response.data?.message?.includes("expired")) &&
-      !originalRequest._retry // Elimina el segundo !originalRequest._retry que está duplicado
+      !originalRequest._retry &&
+      !originalRequest._retry
     ) {
       originalRequest._retry = true;
 
@@ -77,11 +71,8 @@ api.interceptors.response.use(
       console.log("Intentando refrescar el token...");
 
       try {
-        // MUY IMPORTANTE: Asegúrate de que esta llamada a refreshToken también use la API instancia
-        // o si es con axios puro, que use la URL correcta.
-        // Si tu ruta de refresh token es /auth/refresh-token, con BASE_URL='/api', esto debería ser:
         const response = await axios.post(
-          `${BASE_URL}/auth/refresh-token`, // Usar BASE_URL para la llamada de refresh token
+          `${BASE_URL}/auth/refresh-token`,
           {},
           {
             withCredentials: true,
@@ -106,14 +97,14 @@ api.interceptors.response.use(
       } catch (refreshError: any) { // eslint-disable-line
         console.error("Error al refrescar el token: ", refreshError.response?.data || refreshError);
         processQueue(refreshError, null);
-        isRefreshing = false;
+        isRefreshing = false;        
         // Si el refresh token falla, eliminamos los tokens y redirigimos al login
         if (refreshError.response?.status === 401) {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("user");
           window.location.href = "/login";
         }
-
+        
         return Promise.reject(refreshError);
       }
     }

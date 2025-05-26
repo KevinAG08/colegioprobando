@@ -1,9 +1,0 @@
-{
-  "buildCommand": "npm install && npm run build",
-  "installCommand": "npm install",
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "node@20.x"
-    }
-  }
-}

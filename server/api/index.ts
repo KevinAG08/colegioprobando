@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
+
 import authRoutes from '../routes/auth';
 import adminRoutes from '../routes/admin';
 import aulasRoutes from '../routes/aula';
@@ -14,6 +15,7 @@ import dashboardRoutes from '../routes/dashboard';
 dotenv.config();
 
 const app: Express = express();
+const PORT = process.env.PORT || 5000;
 
 app.use(cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173", 
@@ -22,6 +24,7 @@ app.use(cors({
 
 app.use(cookieParser());
 app.use(express.json());
+
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/aulas", aulasRoutes);
@@ -35,4 +38,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     res.status(200).json({ status: 'Server is healthy', timestamp: new Date().toISOString() });
 });
 
-export default app;
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+    console.log(`URL del cliente (CORS): ${process.env.CLIENT_URL}`);
+});

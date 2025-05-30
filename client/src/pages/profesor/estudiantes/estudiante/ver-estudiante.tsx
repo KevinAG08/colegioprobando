@@ -6,7 +6,7 @@ import { useEstudiante } from "@/hooks/useEstudiantes";
 import { Undo2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const VerEstudiante = () => {
+const VerEstudianteProfesor = () => {
   const navigate = useNavigate();
   const { estudianteId } = useParams<{ estudianteId: string }>();
   const {
@@ -75,7 +75,7 @@ const VerEstudiante = () => {
         <Button
           variant="outline"
           size="default"
-          onClick={() => navigate("/admin/estudiantes")}
+          onClick={() => navigate("/profesor/estudiantes")}
           className="mt-4"
         >
           <Undo2 className="h-4 w-4 mr-2" />
@@ -98,7 +98,7 @@ const VerEstudiante = () => {
         <Button
           variant="outline"
           size="default"
-          onClick={() => navigate("/admin/estudiantes")}
+          onClick={() => navigate("/profesor/estudiantes")}
         >
           <Undo2 className="h-4 w-4 mr-2" />
           Volver a la lista
@@ -151,4 +151,4 @@ const VerEstudiante = () => {
   );
 };
 
-export default VerEstudiante;
+export default VerEstudianteProfesor;

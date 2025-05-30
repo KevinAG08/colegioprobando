@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
-import { useAllAsistencias } from "@/hooks/useAsistencias";
-import { useAulas } from "@/hooks/useAulas";
-import { useEstudiantes } from "@/hooks/useEstudiantes";
-import { AsistenciaDetalle, Estudiante, Asistencia } from "@/types";
+import { useProfesorAsistencias } from "@/hooks/useAsistencias";
+import { useProfesorAulas } from "@/hooks/useAulas";
+import { useEstudiantesByProfesor } from "@/hooks/useEstudiantes";
+import {
+  AsistenciaDetalle,
+  Estudiante,
+  Asistencia,
+} from "@/types";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/heading";
 import { Separator } from "@/components/ui/separator";
@@ -40,14 +44,17 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import { LoadingComponent } from "@/components/loading-component";
 
-const AsistenciasExport = () => {
+const AsistenciasExportProfesor = () => {
+  const { user } = useAuth();
+
   const { data: asistencias, isLoading: isAsistenciasLoading } =
-    useAllAsistencias();
-  const { data: aulas, isLoading: isAulasLoading } = useAulas();
+    useProfesorAsistencias(user?.id);
+  const { data: aulas, isLoading: isAulasLoading } = useProfesorAulas(user?.id);
   const { data: estudiantes, isLoading: isEstudiantesLoading } =
-    useEstudiantes();
+    useEstudiantesByProfesor(user?.id);
 
   const [selectedAulaId, setSelectedAulaId] = useState<string>("todos");
   const [selectedEstudianteId, setSelectedEstudianteId] =
@@ -77,6 +84,7 @@ const AsistenciasExport = () => {
     { value: "falta_justificada", label: "Falta Justificada" },
     { value: "tardanza_justificada", label: "Tardanza Justificada" },
   ];
+
 
   // FUNCIÓN AGREGADA: Para manejar fechas sin problemas de zona horaria
   const formatearFechaSolo = (fechaString: string) => {
@@ -269,8 +277,8 @@ const AsistenciasExport = () => {
                 <SelectContent>
                   <SelectItem value="todos">Todas</SelectItem>
                   {aulas?.map((aula) => (
-                    <SelectItem key={aula.id} value={aula.id}>
-                      {aula.nombre}
+                    <SelectItem key={aula.aulaId} value={aula.aulaId}>
+                      {aula.aula.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -415,4 +423,4 @@ const AsistenciasExport = () => {
   );
 };
 
-export default AsistenciasExport;
+export default AsistenciasExportProfesor;

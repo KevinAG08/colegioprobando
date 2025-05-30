@@ -62,7 +62,7 @@ const CambiarPasswordAdminPerfil = () => {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between sm:flex-row flex-col">
         <Heading
           title="Cambiar contraseña"
           description={`Cambiar contraseña del administrador ${nombreCompleto}`}

@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Users, UserPlus, School, CalendarCheck, AlertCircle, FileText, ArrowRight } from 'lucide-react';
+import { Users, UserPlus, School, CalendarCheck, AlertCircle, FileText } from 'lucide-react';
 import { useEstadisticas, useAsistenciaSemanal, useActividadReciente, useDistribucionAula } from "@/hooks/useDashboard";
 
 const DashboardAdmin = () => {
@@ -12,8 +12,6 @@ const DashboardAdmin = () => {
   const { data: asistenciaSemanal, isLoading: asistenciaLoading } = useAsistenciaSemanal();
   const { data: actividadReciente, isLoading: actividadLoading } = useActividadReciente();
   
-  console.log(asistenciaSemanal)
-  console.log(actividadReciente);
   // Datos fallback en caso de carga o error
   const estadisticasFallback = {
     estudiantes: 0,
@@ -40,7 +38,21 @@ const DashboardAdmin = () => {
     { day: 'Vie', presente: 0, falta: 0 }
   ];
   
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const generateColors = (count: number) => {
+    const baseColors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c'];
+    const colors = [];
+
+    for (let i = 0; i < count; i++){
+      if (i < baseColors.length) {
+        colors.push(baseColors[i])
+      } else {
+        const hue = (i * 137.508) % 360;
+        colors.push(`hsl(${hue}, 70%, 60%)`);
+      }
+    }
+
+    return colors;
+  }
   
   return (
     <div className="p-4 md:p-6">
@@ -144,9 +156,9 @@ const DashboardAdmin = () => {
                       fill="#8884d8"
                       dataKey="value"
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {(distribucionAula || distribucionAulaFallback).map((index: any) => (      // eslint-disable-line
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} /> 
+                    > 
+                      {(distribucionAula || distribucionAulaFallback).map((_: number, index: number) => (   
+                        <Cell key={`cell-${index}`} fill={generateColors((distribucionAula || distribucionAulaFallback).length)[index]} /> 
                       ))}
                     </Pie>
                     <Tooltip />
@@ -192,10 +204,6 @@ const DashboardAdmin = () => {
           <div className="bg-white rounded-lg shadow p-4 col-span-1 lg:col-span-2">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Actividad Reciente</h3>
-              <button className="text-blue-600 text-sm font-medium flex items-center">
-                Ver todo
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </button>
             </div>
             <div className="overflow-y-auto max-h-72">
               {actividadLoading ? (

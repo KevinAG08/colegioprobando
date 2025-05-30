@@ -248,7 +248,7 @@ export const IncidenciaFormProfesor: React.FC<IncidenciaFormProps> = ({
                       <SelectContent>
                         <SelectItem value="En el aula">En el aula</SelectItem>
                         <SelectItem value="En el patio">En el patio</SelectItem>
-                        <SelectItem value="En la casa">En la casa</SelectItem>
+                        <SelectItem value="En los alrededores">En los alrededores</SelectItem>
                         <SelectItem value="En otro lugar">
                           En otro lugar
                         </SelectItem>
@@ -277,20 +277,20 @@ export const IncidenciaFormProfesor: React.FC<IncidenciaFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Acoso escolar">
-                          Acoso escolar
+                        <SelectItem value="Acoso escolar / Bullying">
+                          Acoso escolar / Bullying
                         </SelectItem>
                         <SelectItem value="Agresión física">
                           Agresión física
                         </SelectItem>
                         <SelectItem value="Agresión verbal">
                           Agresión verbal
-                        </SelectItem>
-                        <SelectItem value="Vandalismo">Vandalismo</SelectItem>
+                        </SelectItem>                        
                         <SelectItem value="Robo/hurto">Robo/hurto</SelectItem>
                         <SelectItem value="Posesión de objetos peligrosos">
                           Posesión de objetos peligrosos
                         </SelectItem>
+                        <SelectItem value="Pandillaje">Pandillaje</SelectItem>
                         <SelectItem value="Otros">Otros</SelectItem>
                       </SelectContent>
                     </Select>

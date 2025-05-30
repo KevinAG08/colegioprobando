@@ -1,11 +1,9 @@
 import { columns, EstudianteColumn } from "./columns";
 import { useNavigate } from "react-router-dom";
 import { Heading } from "@/components/heading";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/data-table";
-import { Aula } from "@/types";
+import { AulaProfesor } from "@/types";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -18,7 +16,7 @@ import { useTableConfig } from "@/lib/tablesConfig/useTableConfig";
 
 interface EstudianteClientProps {
   data: EstudianteColumn[];
-  aulas: Aula[] | undefined;
+  aulas: AulaProfesor[] | undefined;
   selectedAulaId: string | undefined;
   onAulaChange: (aulaId: string) => void;
   isLoadingAulas: boolean;
@@ -37,36 +35,25 @@ export const EstudianteClient: React.FC<EstudianteClientProps> = ({
   const handleAulaChange = (aulaId: string) => {
     onAulaChange(aulaId);
 
-    navigate(`/admin/estudiantes?aulaId=${aulaId}`);
-  };
-
-  const handleAddStudent = () => {
-    if (selectedAulaId) {
-      navigate(`/admin/estudiantes/registrar/${selectedAulaId}`);
-    } else {
-      navigate("/admin/estudiantes/registrar");
-    }
+    navigate(`/profesor/estudiantes?aulaId=${aulaId}`);
   };
 
   return (
     <>
-      <div className="flex items-center justify-between sm:flex-row flex-col">
+      <div className="flex items-center justify-between">
         <Heading
           title={`Estudiantes ${
             selectedAulaId
               ? `(${
                   selectedAulaId !== "todos"
-                    ? aulas?.find((aula) => aula.id === selectedAulaId)?.nombre
+                    ? aulas?.find((aula) => aula.aulaId === selectedAulaId)
+                        ?.aula.nombre
                     : "Todos"
                 })`
               : ""
           }`}
           description="Listado de estudiantes"
         />
-        <Button onClick={handleAddStudent} disabled={isLoadingAulas}>
-          <Plus className="mr-2 h-4 w-4" />
-          Añadir estudiante
-        </Button>
       </div>
       <Separator />
       <div className="my-4">
@@ -90,8 +77,8 @@ export const EstudianteClient: React.FC<EstudianteClientProps> = ({
                   Todos
                 </SelectItem>
                 {aulas?.map((aula) => (
-                  <SelectItem key={aula.id} value={aula.id}>
-                    {aula.nombre}
+                  <SelectItem key={aula.aulaId} value={aula.aulaId}>
+                    {aula.aula.nombre}
                   </SelectItem>
                 ))}
               </>

@@ -34,6 +34,7 @@ import { useEstudiantesByAula } from "@/hooks/useEstudiantes";
 import { AsistenciaDetalle, Estudiante } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { CalendarIcon, Loader2, School } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -106,16 +107,27 @@ const AsistenciasPage = () => {
 
   useEffect(() => {    
     if (estudiantes && estudiantes.length > 0) {
+      // Ordenar estudiantes alfabéticamente por apellidos
+      const sortedEstudiantes = [...estudiantes].sort((a, b) => {
+        const apellidoA = a.apellidos.trim().toLowerCase();
+        const apellidoB = b.apellidos.trim().toLowerCase();
+        return apellidoA.localeCompare(apellidoB, 'es', { 
+          sensitivity: 'base',
+          numeric: true,
+          ignorePunctuation: true
+        });
+      });
+
       if (!asistenciaData || !asistenciaData.detalles || asistenciaData.detalles.length === 0) {
         // No attendance data exists for this date, so default to "presente"
-        const newMergedData = estudiantes.map((estudiante: Estudiante) => ({
+        const newMergedData = sortedEstudiantes.map((estudiante: Estudiante) => ({
           estudiante: estudiante,
           estado: "presente" as EstadoKey,
         }));
         setMergedData(newMergedData);
       } else {
         // Attendance data exists, map it to students
-        const newMergedData = estudiantes.map((estudiante: Estudiante) => {
+        const newMergedData = sortedEstudiantes.map((estudiante: Estudiante) => {
           const asistenciaItem = asistenciaData.detalles.find(
             (item: AsistenciaDetalle) => item.estudianteId === estudiante.id
           );
@@ -219,7 +231,7 @@ const AsistenciasPage = () => {
         <Heading title="Asistencias" description="Listado de asistencias" />
       </div>
       <Separator className="mb-8" />
-      <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+      <div className="bg-white rounded-lg shadow-sm p-3 md:p-8">
         <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start">
           <div className="space-y-2 w-full sm:w-auto">
             <div className="text-sm font-medium">Aula</div>
@@ -265,7 +277,7 @@ const AsistenciasPage = () => {
                   className="w-full sm:w-[240px] justify-start text-left font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(date, "PPP")}
+                  {format(date, "PPP", { locale: es })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -295,21 +307,24 @@ const AsistenciasPage = () => {
           <>
             <Table>
               <TableCaption>
-                Lista de asistencia del {format(date, "PPP")}
+                Lista de asistencia del {format(date, "PPP", { locale: es })}
               </TableCaption>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[300px]">Estudiante</TableHead>
+                  <TableHead className="w-[250px]">Estudiante</TableHead>
                   <TableHead>Estado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {mergedData.map((item) => (
                   <TableRow key={item.estudiante.id}>
-                    <TableCell className="font-medium">
-                      {item.estudiante.nombres} {item.estudiante.apellidos}
+                    <TableCell className="font-medium w-[250px]">
+                      <div className="leading-tight">
+                        <div className="font-semibold">{item.estudiante.apellidos}</div>
+                        <div className="text-sm text-gray-600">{item.estudiante.nombres}</div>
+                      </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="sm:w-[130px]">
                       <Select
                         value={item.estado}
                         onValueChange={(value) =>
@@ -320,7 +335,7 @@ const AsistenciasPage = () => {
                         }
                       >
                         <SelectTrigger
-                          className={`w-[180px] ${
+                          className={`w-[130px] ${
                             asistenciaEstados[item.estado]?.color || ""
                           }`}
                         >

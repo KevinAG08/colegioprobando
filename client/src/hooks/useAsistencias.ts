@@ -12,6 +12,18 @@ export const useAllAsistencias = () => {
   });
 };
 
+export const useProfesorAsistencias = (profesorId: string | undefined) => {
+  return useQuery({
+    queryKey: ["profesorAsistencias", profesorId],
+    queryFn: async () => {
+      if (!profesorId) return null;
+      const response = await api.get(`/asistencias/${profesorId}`);
+      return response.data;
+    },
+    enabled: !!profesorId,
+  });
+};
+
 export const useAsistenciasByAulaAndDate = (
   aulaId: string | undefined,
   date: string | undefined

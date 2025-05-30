@@ -5,6 +5,7 @@ import { useIncidenciasByProfesor } from "@/hooks/useIncidencias";
 import { useProfesorAulas } from "@/hooks/useAulas";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { LoadingComponent } from "@/components/loading-component";
 
 const IncidenciasPageProfesor = () => {
   const { user } = useAuth();
@@ -31,12 +32,15 @@ const IncidenciasPageProfesor = () => {
     (incidencia: Incidencia) => {
       let fechaFormateada = "N/A";
       let horaFormateada = "N/A";
+      let fechaOriginal = null;
 
       if (incidencia.fecha) {
         // Primero, convierte la cadena incidencia.fecha a un objeto Date
         const dateObject = new Date(incidencia.fecha);
         // Opcional: Verificar si la fecha es válida antes de formatear
         if (!isNaN(dateObject.getTime())) {
+          fechaOriginal = incidencia.fecha;
+
           fechaFormateada = dateObject.toLocaleDateString("es-ES", {
             // Corregido "es-Es" a "es-ES" para el código de idioma estándar
             day: "2-digit",
@@ -48,8 +52,8 @@ const IncidenciasPageProfesor = () => {
             hour: "2-digit",
             minute: "2-digit",
             hour12: true,
-            timeZone: "UTC"
-          })
+            timeZone: "UTC",
+          });
         } else {
           console.warn("Fecha inválida encontrada:", incidencia.fecha);
           // Mantener "N/A" o manejar como prefieras una fecha inválida
@@ -57,7 +61,8 @@ const IncidenciasPageProfesor = () => {
       }
       return {
         id: incidencia.id || "",
-        fecha: fechaFormateada || "",
+        fecha: fechaOriginal || "",
+        fechaFormateada: fechaFormateada || "",
         hora: horaFormateada || "",
         lugar: incidencia.lugar || "",
         tipoIncidencia: incidencia.tipoIncidencia || "",
@@ -84,7 +89,7 @@ const IncidenciasPageProfesor = () => {
   );
 
   if (isLoading || isAulasLoading) {
-    return <div>Cargando datos...</div>;
+    return <LoadingComponent />;
   }
 
   if (error) {
@@ -101,7 +106,7 @@ const IncidenciasPageProfesor = () => {
 
   return (
     <div className="flex-col">
-      <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex-1 space-y-4 md:p-8 pt-6">
         <IncidenciaClient
           data={formattedIncidencias}
           aulas={aulas}

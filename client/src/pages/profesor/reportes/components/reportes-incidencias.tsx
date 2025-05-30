@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useIncidencias } from "@/hooks/useIncidencias";
-import { useAulas } from "@/hooks/useAulas";
-import { useEstudiantes } from "@/hooks/useEstudiantes";
+import { useIncidenciasByProfesor } from "@/hooks/useIncidencias";
+import { useProfesorAulas } from "@/hooks/useAulas";
+import { useEstudiantesByProfesor } from "@/hooks/useEstudiantes";
 import { Incidencia, Estudiante, IncidenciaDetalle } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/heading";
@@ -31,6 +31,7 @@ import {
   subDays,
 } from "date-fns";
 import { es } from "date-fns/locale";
+import { useAuth } from "@/hooks/useAuth";
 import { LoadingComponent } from "@/components/loading-component";
 import {
   Popover,
@@ -39,12 +40,14 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
-export const IncidenciasExport = () => {
+export const IncidenciasExportProfesor = () => {
+  const { user } = useAuth();
+
   const { data: incidencias, isLoading: isIncidenciasLoading } =
-    useIncidencias();
-  const { data: aulas, isLoading: isAulasLoading } = useAulas();
+    useIncidenciasByProfesor(user?.id);
+  const { data: aulas, isLoading: isAulasLoading } = useProfesorAulas(user?.id);
   const { data: estudiantes, isLoading: isEstudiantesLoading } =
-    useEstudiantes();
+    useEstudiantesByProfesor(user?.id);
 
   const [selectedAulaId, setSelectedAulaId] = useState<string>("todos");
   const [selectedEstudianteId, setSelectedEstudianteId] =
@@ -168,7 +171,7 @@ export const IncidenciasExport = () => {
       }
 
       filtered = filtered.filter((det) => {
-        const fecha = crearFechaSinZonaHoraria(det.fecha);
+        const fecha = crearFechaSinZonaHoraria(det.fecha); // CAMBIADO: Usar función helper
         return isWithinInterval(fecha, { start: startDate, end: endDate });
       });
     }
@@ -205,7 +208,7 @@ export const IncidenciasExport = () => {
 
     if (selectedAulaId !== "todos") {
       const aulaName =
-        aulas?.find((a) => a.id === selectedAulaId)?.nombre || selectedAulaId;
+        aulas?.find((a) => a.id === selectedAulaId)?.aula.id || selectedAulaId;
       filterText += `Aula: ${aulaName}`;
     } else {
       filterText += "Todas las aulas";
@@ -295,7 +298,7 @@ export const IncidenciasExport = () => {
           "Lugar",
           "Tipo",
           "Estudiantes",
-          "Aulas",
+          "Aula",
           "Descripción",
           "Medidas Adoptadas",
         ],
@@ -458,8 +461,8 @@ export const IncidenciasExport = () => {
                 <SelectContent>
                   <SelectItem value="todos">Todas</SelectItem>
                   {aulas?.map((aula) => (
-                    <SelectItem key={aula.id} value={aula.id}>
-                      {aula.nombre}
+                    <SelectItem key={aula.aulaId} value={aula.aulaId}>
+                      {aula.aula.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -574,10 +577,10 @@ export const IncidenciasExport = () => {
                     <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
-                        selected={selectedDate || undefined}
+                        selected={selectedDate || undefined} // This is correct: selected prop expects Date | undefined
                         onSelect={(dateValue: Date | undefined) => {
-                          setSelectedDate(dateValue || null);
-                          setIsCalendarOpen(false);
+                          setSelectedDate(dateValue || null); // Convert undefined to null
+                          setIsCalendarOpen(false); // Close popover on selection
                         }}
                         initialFocus
                       />
@@ -705,4 +708,4 @@ export const IncidenciasExport = () => {
   );
 };
 
-export default IncidenciasExport;
+export default IncidenciasExportProfesor;

@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Aula } from "@/types";
+import { Label } from "@/components/ui/label";
+import { useTableConfig } from "@/lib/tablesConfig/useTableConfig";
 
 interface IncidenciaClientProps {
   data: IncidenciaColumn[];
@@ -24,20 +26,27 @@ interface IncidenciaClientProps {
 
 export const IncidenciaClient: React.FC<IncidenciaClientProps> = ({ data, aulas, selectedAulaId, onAulaChange, isLoadingAulas }) => {
   const navigate = useNavigate();
+  const { incidenciasConfig } = useTableConfig();
 
   return (
     <>
       <div className="flex items-center justify-between">
         <Heading title="Incidencias" description="Listado de incidencias" />
-        <div className="flex gap-3">
-          <div className="w-64">
-            <Select
+        <Button onClick={() => navigate("/admin/incidencias/registrar")}>
+          <Plus className="mr-2 h-4 w-4" />
+          Registrar incidencia
+        </Button>
+      </div>
+      <Separator />
+      <div className="my-4">
+        <Label htmlFor="aula-select">Seleccionar aula</Label>
+        <Select
               value={selectedAulaId}
               onValueChange={onAulaChange}
               disabled={isLoadingAulas}
             >
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Seleccione un aula..." />
+              <SelectTrigger id="aula-select" className="w-[280px] mt-1">
+                <SelectValue placeholder="Seleccionar un aula..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todas las aulas</SelectItem>
@@ -48,17 +57,14 @@ export const IncidenciaClient: React.FC<IncidenciaClientProps> = ({ data, aulas,
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        </div>
-        <Button onClick={() => navigate("/admin/incidencias/registrar")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Registrar incidencia
-        </Button>
       </div>
-      <Separator />
       <DataTable
         columns={columns}
         data={data}
+        defaultSorting={incidenciasConfig.defaultSorting}
+        searchPlaceholder={incidenciasConfig.searchPlaceholder}
+        enableGlobalFilter={true}
+        enableColumnFilters={true}
       />
     </>
   );

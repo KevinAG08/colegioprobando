@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/data-table";
+import { useTableConfig } from "@/lib/tablesConfig/useTableConfig";
 
 interface ProfesorClientProps {
   data: ProfesorColumn[];
@@ -12,6 +13,7 @@ interface ProfesorClientProps {
 
 export const ProfesorClient: React.FC<ProfesorClientProps> = ({ data }) => {
   const navigate = useNavigate();
+  const { profesoresConfig } = useTableConfig();
 
   return (
     <>
@@ -23,7 +25,14 @@ export const ProfesorClient: React.FC<ProfesorClientProps> = ({ data }) => {
         </Button>
       </div>
       <Separator />
-      <DataTable columns={columns} data={data} />
+      <DataTable
+        columns={columns}
+        data={data}
+        defaultSorting={profesoresConfig.defaultSorting}
+        searchPlaceholder={profesoresConfig.searchPlaceholder}
+        enableGlobalFilter={true}
+        enableColumnFilters={true}
+      />
     </>
   );
 };

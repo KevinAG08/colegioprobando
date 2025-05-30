@@ -81,6 +81,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         icon: <AlertTriangle size={20} />,
       },
       {
+        name: "Estudiantes",
+        ruta: "/profesor/estudiantes",
+        icon: <GraduationCap size={20} />
+      },
+      {
         name: "Reportes",
         ruta: "/profesor/reportes",
         icon: <FileText size={20} />,

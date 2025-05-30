@@ -1,4 +1,4 @@
-import { ColumnDef, CellContext } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { CellAction } from "./cell-action";
 
 export type EstudianteColumn = {
@@ -16,26 +16,27 @@ export type EstudianteColumn = {
 
 export const columns: ColumnDef<EstudianteColumn>[] = [
   {
-    id: "index",
-    header: "N°",
-    cell: (info: CellContext<EstudianteColumn, unknown>) =>
-      `${info.row.index + 1}`,
+    accessorKey: "apellidos",
+    header: "Apellidos",
+    enableColumnFilter: false,
   },
   {
     accessorKey: "nombres",
     header: "Nombres",
-  },
-  {
-    accessorKey: "apellidos",
-    header: "Apellidos",
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     accessorKey: "dni",
     header: "DNI",
+    enableSorting: false,
+    enableColumnFilter: false,
   },
   {
     accessorKey: "aula",
     header: "Aula",
+    enableSorting: false,
+    enableColumnFilter: false,
   },
   {
     accessorKey: "telefono",
@@ -44,10 +45,14 @@ export const columns: ColumnDef<EstudianteColumn>[] = [
       const telefono = row.original.telefono;
       return telefono ? telefono : "-";
     },
+    enableSorting: false,
+    enableColumnFilter: false,
   },
   {
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => <CellAction data={row.original} />,
+    enableSorting: false,
+    enableColumnFilter: false,
   },
 ];

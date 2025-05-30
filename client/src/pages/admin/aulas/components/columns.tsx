@@ -15,15 +15,21 @@ export const columns: ColumnDef<AulaColumn>[] = [
     },
     {
         accessorKey: "nombre",
-        header: "Nombre"
+        header: "Nombre",
+        enableColumnFilter: false,
+        enableSorting: false,
     },
     {
         accessorKey: "nivel",
-        header: "Nivel"
+        header: "Nivel",
+        enableColumnFilter: false,
+        enableSorting: false,
     },
     {
         id: "actions",
         header: "Acciones",
-        cell: ({ row }) => <CellAction data={row.original} />
+        cell: ({ row }) => <CellAction data={row.original} />,
+        enableColumnFilter: false,
+        enableSorting: false,
     }
 ]

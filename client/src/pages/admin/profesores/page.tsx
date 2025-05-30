@@ -2,6 +2,7 @@ import { ProfesorClient } from "./components/client";
 import { ProfesorColumn } from "./components/columns";
 import { User } from "@/types";
 import { useProfesores } from "@/hooks/useProfesores";
+import { LoadingComponent } from "@/components/loading-component";
 
 const ProfesoresPage = () => {
   const { data: profesores, isLoading, error } = useProfesores();
@@ -19,16 +20,18 @@ const ProfesoresPage = () => {
   );
 
   if (isLoading) {
-    return <div>Cargando profesores...</div>;
+    return <LoadingComponent />;
   }
 
   if (error) {
-    return <div>Error al cargar los profesores: {(error as Error).message}</div>;
+    return (
+      <div>Error al cargar los profesores: {(error as Error).message}</div>
+    );
   }
 
   return (
     <div className="flex-col">
-      <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex-1 space-y-4 md:p-8 pt-6">
         <ProfesorClient data={formattedProfesores} />
       </div>
     </div>

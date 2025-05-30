@@ -8,7 +8,6 @@ import {
 import { User, Estudiante } from "@/types";
 import {
   AlertCircle,
-  ArrowRight,
   CalendarCheck,
   CheckCircle,
   FileText,
@@ -68,7 +67,21 @@ const DashboardProfesor = () => {
     { day: "Vie", presente: 0, falta: 0 },
   ];
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+  const generateColors = (count: number) => {
+    const baseColors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c'];
+    const colors = [];
+
+    for (let i = 0; i < count; i++){
+      if (i < baseColors.length) {
+        colors.push(baseColors[i])
+      } else {
+        const hue = (i * 137.508) % 360;
+        colors.push(`hsl(${hue}, 70%, 60%)`);
+      }
+    }
+
+    return colors;
+  }
 
   return (
     <div className="p-6">
@@ -104,7 +117,7 @@ const DashboardProfesor = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {user.aulas.map((aulaProfesor) => (
                 <a
-                  href={`/aulas/${aulaProfesor.aula.id}`}
+                  href={`/profesor/estudiantes?aulaId=${aulaProfesor.aula.id}`}
                   key={aulaProfesor.id}
                   className="bg-blue-50 hover:bg-blue-100 p-3 rounded-lg flex flex-col items-center text-center"
                 >
@@ -173,10 +186,10 @@ const DashboardProfesor = () => {
 
         {/* Gráficos y estadísticas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Distribución de asistencia */}
+          {/* Distribución de incidencias */}
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold mb-4">
-              Distribución de Asistencia
+              Distribución de Incidencias
             </h3>
             <div className="h-64">
               {distribucionIncidenciaProfesorLoading ? (
@@ -206,11 +219,11 @@ const DashboardProfesor = () => {
                         distribucionIncidenciaProfesorFallback
                       ).map(
                         (
-                          index: any // eslint-disable-line
+                          _:number, index: number
                         ) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
+                            fill={generateColors((distribucionIncidenciaProfesor || distribucionIncidenciaProfesorFallback).length)[index]}
                           />
                         )
                       )}
@@ -266,10 +279,6 @@ const DashboardProfesor = () => {
           <div className="bg-white rounded-lg shadow p-4 col-span-1 lg:col-span-2">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Actividad Reciente</h3>
-              <button className="text-blue-600 text-sm font-medium flex items-center">
-                Ver todo
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </button>
             </div>
             <div className="overflow-y-auto max-h-72">
               {actividadLoading ? (
@@ -331,28 +340,28 @@ const DashboardProfesor = () => {
             <h3 className="text-lg font-semibold mb-4">Accesos Rápidos</h3>
             <div className="space-y-3">
               <a
-                href="/admin/profesores"
+                href="/profesor/asistencia"
                 className="py-3 px-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center"
               >
                 <CalendarCheck className="h-5 w-5 mr-3 text-green-600" />
                 <span className="font-medium">Registrar asistencia</span>
               </a>
               <a
-                href="/admin/estudiantes"
+                href="/profesor/incidencias/registrar"
                 className="py-3 px-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center"
               >
                 <AlertCircle className="h-5 w-5 mr-3 text-red-600" />
                 <span className="font-medium">Registrar incidencia</span>
               </a>
               <a
-                href="/admin/aulas"
+                href="/profesor/estudiantes"
                 className="py-3 px-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center"
               >
                 <Users className="h-5 w-5 mr-3 text-blue-600" />
                 <span className="font-medium">Lista de estudiantes</span>
               </a>
               <a
-                href="/admin/reportes"
+                href="/profesor/reportes"
                 className="py-3 px-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center"
               >
                 <FileText className="h-5 w-5 mr-3 text-indigo-600" />

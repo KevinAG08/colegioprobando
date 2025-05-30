@@ -2,9 +2,7 @@ import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { UserRole } from "@/types";
 import RutaProtegida from "@/pages/ruta-protegida";
-
-// Componente de carga para lazy loading
-const LoadingFallback = () => <div className="flex items-center justify-center h-screen">Cargando...</div>;
+import { LoadingFallback } from "@/components/loading-fallback";
 
 // Página común
 const LoginPage = lazy(() => import("@/pages/login"));

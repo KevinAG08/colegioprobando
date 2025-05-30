@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/data-table";
 import { AulaFormModal } from "./aula-modal";
 import { useState } from "react";
+import { useTableConfig } from "@/lib/tablesConfig/useTableConfig";
 
 interface AulaClientProps {
   data: AulaColumn[];
@@ -13,6 +14,7 @@ interface AulaClientProps {
 
 export const AulaClient: React.FC<AulaClientProps> = ({ data }) => {
   const [showModal, setShowModal] = useState(false);
+  const { aulasConfig } = useTableConfig();
 
   return (
     <>
@@ -25,7 +27,7 @@ export const AulaClient: React.FC<AulaClientProps> = ({ data }) => {
         </Button>
       </div>
       <Separator />
-      <DataTable columns={columns} data={data} />
+      <DataTable columns={columns} data={data} searchPlaceholder={aulasConfig.searchPlaceholder} />
     </>
   );
 };

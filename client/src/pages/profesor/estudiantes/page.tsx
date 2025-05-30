@@ -3,14 +3,21 @@ import { EstudianteColumn } from "./components/columns";
 import { Estudiante } from "@/types";
 import { format } from "date-fns";
 import { EstudianteClient } from "./components/client";
-import { useAulas } from "@/hooks/useAulas";
-import { useEstudiantes } from "@/hooks/useEstudiantes";
+import { useProfesorAulas } from "@/hooks/useAulas";
+import { useEstudiantesByProfesor } from "@/hooks/useEstudiantes";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { LoadingComponent } from "@/components/loading-component";
 
-const EstudiantesPage = () => {
-  const { data: aulas, isLoading: isAulasLoading } = useAulas();
-  const { data: estudiantes, isLoading, error } = useEstudiantes();
+const EstudiantesPageProfesor = () => {
+  const { user } = useAuth();
+
+  const { data: aulas, isLoading: isAulasLoading } = useProfesorAulas(user?.id);
+  const {
+    data: estudiantes,
+    isLoading,
+    error,
+  } = useEstudiantesByProfesor(user?.id);
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -22,7 +29,7 @@ const EstudiantesPage = () => {
     if (aulaIdFromUrl) {
       setSelectedAulaId(aulaIdFromUrl);
     } else if (aulas && aulas?.length > 0 && !selectedAulaId) {
-      setSelectedAulaId(aulas[0]?.id);
+      setSelectedAulaId(aulas[0]?.aulaId);
     }
   }, [aulas, selectedAulaId, aulaIdFromUrl]);
 
@@ -68,7 +75,7 @@ const EstudiantesPage = () => {
 
   return (
     <div className="flex-col">
-      <div className="flex-1 space-y-4 md:p-8 pt-6">
+      <div className="flex-1 space-y-4 p-8 pt-6">
         <EstudianteClient
           data={formattedEstudiantes}
           aulas={aulas}
@@ -81,4 +88,4 @@ const EstudiantesPage = () => {
   );
 };
 
-export default EstudiantesPage;
+export default EstudiantesPageProfesor;

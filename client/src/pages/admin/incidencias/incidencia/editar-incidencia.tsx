@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { IncidenciaForm } from "../components/form";
 import { useIncidencia } from "@/hooks/useIncidencias";
+import { LoadingComponent } from "@/components/loading-component";
 
 const EditarIncidencia = () => {
   const { incidenciaId } = useParams();
@@ -11,7 +12,7 @@ const EditarIncidencia = () => {
   } = useIncidencia(incidenciaId || "");
 
   if (isLoading) {
-    return <div>Cargando...</div>;
+    return <LoadingComponent />;
   }
 
   if (error || !incidenciaData) {

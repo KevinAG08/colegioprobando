@@ -1,4 +1,5 @@
 import { Heading } from "@/components/heading";
+import { LoadingComponent } from "@/components/loading-component";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -17,7 +18,7 @@ const VerIncidenciaProfesor = () => {
   } = useIncidencia(incidenciaId || "");
 
   if (isLoading) {
-    return <div>Cargando...</div>;
+    return <LoadingComponent />;
   }
 
   if (error) {
@@ -66,13 +67,14 @@ const VerIncidenciaProfesor = () => {
                 day: "2-digit",
                 month: "2-digit",
                 year: "numeric",
-                timeZone: "UTC"
-              })}{" "} a las {" "}
+                timeZone: "UTC",
+              })}{" "}
+              a las{" "}
               {new Date(incidencia.fecha).toLocaleTimeString("es-ES", {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: true,
-                timeZone: "UTC"
+                timeZone: "UTC",
               })}
             </p>
           </div>

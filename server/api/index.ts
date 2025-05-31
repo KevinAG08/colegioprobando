@@ -2,7 +2,6 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
-
 import authRoutes from '../routes/auth';
 import adminRoutes from '../routes/admin';
 import aulasRoutes from '../routes/aula';
@@ -22,7 +21,7 @@ app.use(cors({
     credentials: true,
 }));
 
-app.use(cookieParser());
+app.use(cookieParser())
 app.use(express.json());
 
 app.use("/auth", authRoutes);

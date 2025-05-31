@@ -3,20 +3,6 @@ import prismadb from "../utils/prismadb";
 import { Request, Response, NextFunction } from "express";
 import { User, Estudiante } from "@prisma/client";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error(
-    "FATAL ERROR: JWT_SECRET is not defined in environment variables."
-  );
-}
-// Provide a default only for development/testing if absolutely necessary, but warn loudly.
-const effectiveJwtSecret = JWT_SECRET || "my_jwt_super_secret_key_dev_only";
-if (!JWT_SECRET) {
-  console.warn(
-    "Warning: Using default JWT_SECRET. Set JWT_SECRET environment variable for production."
-  );
-}
-
 interface CustomJwtPayload extends JwtPayload {
   id: string;
   type: "user" | "estudiante";
@@ -39,12 +25,29 @@ type UserRole = string;
 
 export const authMiddleware = (requiredRoles: UserRole[] = []) => {
   // Return the actual middleware function
+
+  // Read JWT_SECRET when the middleware factory is called, ensuring it's up-to-date.
+  const JWT_SECRET_FROM_ENV = process.env.JWT_SECRET;
+  if (!JWT_SECRET_FROM_ENV) {
+    console.error(
+      "FATAL ERROR: JWT_SECRET is not defined in environment variables when authMiddleware is configured."
+    );
+    // Consider throwing an error here for production if JWT_SECRET is critical
+    // throw new Error("FATAL ERROR: JWT_SECRET is not defined.");
+  }
+  // Provide a default only for development/testing if absolutely necessary, but warn loudly.
+  const effectiveJwtSecret = JWT_SECRET_FROM_ENV || "my_jwt_super_secret_key_dev_only";
+  if (!JWT_SECRET_FROM_ENV) {
+    console.warn(
+      "Warning: Using default JWT_SECRET. Set JWT_SECRET environment variable for production."
+    );
+  }
+
   return async (
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
-    // Explicit return type
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

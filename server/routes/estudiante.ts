@@ -13,7 +13,7 @@ const router = express.Router();
 
 // READ
 router.get("/", authMiddleware(["admin"]), getEstudiantes);
-router.get("/:id", authMiddleware(["admin"]), getEstudianteById);
+router.get("/:id", authMiddleware(["admin", "profesor"]), getEstudianteById);
 router.get("/aula/:aulaId", authMiddleware(["admin", "profesor"]), getEstudiantesByAulaId);
 router.get("/profesor/:profesorId", authMiddleware(["admin", "profesor"]), getEstudiantesByProfesorId);
 

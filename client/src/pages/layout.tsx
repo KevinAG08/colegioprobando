@@ -28,7 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (user?.rol === "admin") {
     navItems = [
       {
-        name: "Dashboard",
+        name: "Inicio",
         ruta: "/admin/dashboard",
         icon: <LayoutDashboard size={20} />,
       },
@@ -66,7 +66,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   } else if (user?.rol === "profesor") {
     navItems = [
       {
-        name: "Dashboard",
+        name: "Inicio",
         ruta: "/profesor/dashboard",
         icon: <LayoutDashboard size={20} />,
       },

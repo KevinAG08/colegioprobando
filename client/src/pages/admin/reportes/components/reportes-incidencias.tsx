@@ -497,6 +497,7 @@ export const IncidenciasExport = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="Inasistencia">Inasistencia</SelectItem>
                   <SelectItem value="Acoso escolar / Bullying">
                     Acoso escolar / Bullying
                   </SelectItem>

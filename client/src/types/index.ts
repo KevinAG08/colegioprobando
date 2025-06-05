@@ -94,4 +94,5 @@ export interface AuthContextType {
   login: (email: string, password: string) => void;
   logout: () => void;
   error: string | null;
+  isLoginLoading: boolean;
 }

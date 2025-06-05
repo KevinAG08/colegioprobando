@@ -274,6 +274,9 @@ export const IncidenciaForm: React.FC<IncidenciaFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="Inasistencia">
+                          Inasistencia
+                        </SelectItem>
                         <SelectItem value="Acoso escolar / Bullying">
                           Acoso escolar / Bullying
                         </SelectItem>

@@ -31,7 +31,7 @@ import logo from "@/assets/logo.png";
 type FormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
-  const { isAuthenticated, user, error, login, isLoading } = useAuth();
+  const { isAuthenticated, user, error, login, isLoginLoading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"login" | "login-profesor">(
     "login"
@@ -127,9 +127,7 @@ const LoginPage = () => {
               >
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="login">Administrativos</TabsTrigger>
-                  <TabsTrigger value="login-profesor">
-                    Profesores
-                  </TabsTrigger>
+                  <TabsTrigger value="login-profesor">Profesores</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
@@ -146,10 +144,10 @@ const LoginPage = () => {
                             <FormLabel>Correo electrónico</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="correo@ejemplo.com"
+                                placeholder="DNI@colegio.com"
                                 {...field}
                                 className="bg-background"
-                                disabled={isLoading}
+                                disabled={isLoginLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -169,7 +167,7 @@ const LoginPage = () => {
                                 {...field}
                                 placeholder="••••••"
                                 className="bg-background"
-                                disabled={isLoading}
+                                disabled={isLoginLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -183,8 +181,12 @@ const LoginPage = () => {
                         </Alert>
                       )}
 
-                      <Button type="submit" className="w-full mt-6">
-                        Iniciar Sesión
+                      <Button
+                        type="submit"
+                        className="w-full mt-6"
+                        disabled={isLoginLoading}
+                      >
+                        {isLoginLoading ? "Ingresando" : "Ingresar al sistema"}
                       </Button>
                     </form>
                   </Form>
@@ -206,10 +208,10 @@ const LoginPage = () => {
                             <FormLabel>Email</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="correo@ejemplo.com"
+                                placeholder="DNI@colegio.com"
                                 {...field}
                                 className="bg-background"
-                                disabled={isLoading}
+                                disabled={isLoginLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -229,7 +231,7 @@ const LoginPage = () => {
                                 {...field}
                                 placeholder="••••••"
                                 className="bg-background"
-                                disabled={isLoading}
+                                disabled={isLoginLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -244,11 +246,11 @@ const LoginPage = () => {
                       )}
 
                       <Button
-                        disabled={isLoading}
+                        disabled={isLoginLoading}
                         type="submit"
                         className="w-full mt-6"
                       >
-                        Ingresar al sistema
+                        {isLoginLoading ? "Ingresando" : "Ingresar al sistema"}
                       </Button>
                     </form>
                   </Form>

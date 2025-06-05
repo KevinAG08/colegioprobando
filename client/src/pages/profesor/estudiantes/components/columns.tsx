@@ -39,16 +39,6 @@ export const columns: ColumnDef<EstudianteColumn>[] = [
     enableSorting: false,
   },
   {
-    accessorKey: "telefono",
-    header: "Telefono",
-    cell: ({ row }) => {
-      const telefono = row.original.telefono;
-      return telefono ? telefono : "-";
-    },
-    enableColumnFilter: false,
-    enableSorting: false,
-  },
-  {
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => <CellAction data={row.original} />,

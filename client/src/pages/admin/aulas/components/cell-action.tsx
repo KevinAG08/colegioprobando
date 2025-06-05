@@ -34,6 +34,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
         showAlert={showAlert}
         setShowAlert={setShowAlert}
         onConfirm={onDelete}
+        isLoading={isPending}
       />
       <AulaFormModal
         isOpen={showModal}

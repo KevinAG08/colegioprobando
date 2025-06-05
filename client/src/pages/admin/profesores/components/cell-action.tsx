@@ -34,7 +34,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
 
   return (
     <>
-      <AlertModal showAlert={showAlert} setShowAlert={setShowAlert} onConfirm={onDelete} />
+      <AlertModal showAlert={showAlert} setShowAlert={setShowAlert} onConfirm={onDelete} isLoading={isPending} />
       <div className="flex items-center gap-2">
         <Button size="icon" className="h-8 w-auto py-4 px-2 bg-green-400" onClick={onSee}>
           <Eye className="h-4 w-4 text-white" />

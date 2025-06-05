@@ -38,6 +38,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
         showAlert={showAlert}
         setShowAlert={setShowAlert}
         onConfirm={onDelete}
+        isLoading={isPending}
       />
       <div className="flex items-center gap-2">
         <Button

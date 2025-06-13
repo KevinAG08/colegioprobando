@@ -127,7 +127,6 @@ export const logout = async (req: Request, res: Response) => {
 
     if (token) {
       await prismadb.refreshToken.deleteMany({ where: { token } });
-      console.log("Token eliminado de la base de datos");
     }
 
     res.clearCookie("refreshToken", {

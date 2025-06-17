@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileDown, Calendar as CalendarIcon, X, RotateCcw } from "lucide-react";
+import { FileDown, Calendar as CalendarIcon, X, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -61,12 +61,21 @@ const AsistenciasExport = () => {
   const [filteredDetalles, setFilteredDetalles] = useState<any[]>([]); // eslint-disable-line
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
+
+  // Datos paginados para mostrar en la tabla
+  const [paginatedDetalles, setPaginatedDetalles] = useState<any[]>([]); // eslint-disable-line
+  const [totalPages, setTotalPages] = useState(0);
+
   const limpiarFiltros = () => {
     setSelectedAulaId("todos");
     setSelectedEstudianteId("todos");
     setSelectedEstado("todos");
     setDateRange("all");
     setSelectedDate(null);
+    setCurrentPage(1); // Resetear a la primera página
   };
 
   // Estados disponibles
@@ -172,9 +181,10 @@ const AsistenciasExport = () => {
       const fechaA = crearFechaSinZonaHoraria(a.fecha);
       const fechaB = crearFechaSinZonaHoraria(b.fecha);
       return fechaB.getTime() - fechaA.getTime();
-    })
+    });
 
     setFilteredDetalles(filtered);
+    setCurrentPage(1); // Resetear a la primera página cuando cambien los filtros
   }, [
     asistencias,
     selectedAulaId,
@@ -183,6 +193,16 @@ const AsistenciasExport = () => {
     dateRange,
     selectedDate,
   ]);
+
+  // Efecto para manejar la paginación
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginated = filteredDetalles.slice(startIndex, endIndex);
+    
+    setPaginatedDetalles(paginated);
+    setTotalPages(Math.ceil(filteredDetalles.length / itemsPerPage));
+  }, [filteredDetalles, currentPage]);
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
@@ -201,6 +221,7 @@ const AsistenciasExport = () => {
     }
   };
 
+  // La función de exportación sigue usando todos los datos filtrados (no paginados)
   const exportToPDF = () => {
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -223,6 +244,45 @@ const AsistenciasExport = () => {
     });
 
     pdf.save(`Informe_Asistencias_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+  };
+
+  // Funciones de navegación de páginas
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Generar números de páginas para mostrar
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const showPages = 5; // Mostrar máximo 5 números de página
+    
+    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
+    const endPage = Math.min(totalPages, startPage + showPages - 1);
+    
+    // Ajustar startPage si endPage es menor que showPages
+    if (endPage - startPage + 1 < showPages) {
+      startPage = Math.max(1, endPage - showPages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return pageNumbers;
   };
 
   if (isAsistenciasLoading || isAulasLoading || isEstudiantesLoading)
@@ -354,10 +414,10 @@ const AsistenciasExport = () => {
                     <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
-                        selected={selectedDate || undefined} // This is correct: selected prop expects Date | undefined
+                        selected={selectedDate || undefined}
                         onSelect={(dateValue: Date | undefined) => {
-                          setSelectedDate(dateValue || null); // Convert undefined to null
-                          setIsCalendarOpen(false); // Close popover on selection
+                          setSelectedDate(dateValue || null);
+                          setIsCalendarOpen(false);
                         }}
                         initialFocus
                       />
@@ -379,6 +439,16 @@ const AsistenciasExport = () => {
           </div>
         </div>
 
+        {/* Información de resultados */}
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            Mostrando {paginatedDetalles.length} de {filteredDetalles.length} registros
+          </div>
+          <div className="text-sm text-gray-600">
+            Página {currentPage} de {totalPages}
+          </div>
+        </div>
+
         <Card>
           <CardContent>
             <Table>
@@ -391,11 +461,10 @@ const AsistenciasExport = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDetalles.map((det) => (
+                {paginatedDetalles.map((det) => (
                   <TableRow key={det.id}>
                     <TableCell>
-                      {formatearFechaSolo(det.fecha)}{" "}
-                      {/* LÍNEA CAMBIADA: Usar la función helper */}
+                      {formatearFechaSolo(det.fecha)}
                     </TableCell>
                     <TableCell>{`${det.estudiante.nombres} ${det.estudiante.apellidos}`}</TableCell>
                     <TableCell>{det.aula?.nombre || "N/A"}</TableCell>
@@ -408,6 +477,45 @@ const AsistenciasExport = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Controles de paginación */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2 mt-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+
+                <div className="flex space-x-1">
+                  {getPageNumbers().map((pageNum) => (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum)}
+                      className="w-10"
+                    >
+                      {pageNum}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

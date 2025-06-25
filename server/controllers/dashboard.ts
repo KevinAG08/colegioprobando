@@ -13,41 +13,34 @@ export const getEstadisticas = async (req: Request, res: Response) => {
 
     const aulas = await prismadb.aula.count();
 
-    // Calcular el porcentaje de asistencia hoy
+    // Calcular el porcentaje de asistencia para el día de hoy en la zona horaria de la escuela.
+    // Esto soluciona el problema de que el servidor (a menudo en UTC) pase al día siguiente
+    // mientras que para el usuario todavía es el día actual.
+    const timeZone = process.env.TIMEZONE || "America/Lima"; // Usar variable de entorno o un valor por defecto
     const fechaHoy = new Date();
 
-    // Crear fecha de inicio del día en UTC
-    const inicioDelDiaUTC = new Date(
-      Date.UTC(
-        fechaHoy.getFullYear(),
-        fechaHoy.getMonth(),
-        fechaHoy.getDate(),
-        0,
-        0,
-        0,
-        0
-      )
-    );
+    const formatter = new Intl.DateTimeFormat("en-CA", { // en-CA da un formato predecible YYYY-MM-DD
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
 
-    // Crear fecha de fin del día en UTC
-    const finDelDiaUTC = new Date(
-      Date.UTC(
-        fechaHoy.getFullYear(),
-        fechaHoy.getMonth(),
-        fechaHoy.getDate(),
-        23,
-        59,
-        59,
-        999
-      )
-    );
+    const parts = formatter.formatToParts(fechaHoy);
+    const year = parseInt(parts.find((p) => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find((p) => p.type === "month")!.value, 10); // 1-based
+    const day = parseInt(parts.find((p) => p.type === "day")!.value, 10);
+
+    // Crear el rango del día en UTC para la consulta a la base de datos
+    const inicioDelDiaUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const finDelDiaUTC = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
     const asistenciasHoy = await prismadb.asistenciaDetalle.findMany({
       where: {
         asistencia: {
           fecha: {
             gte: inicioDelDiaUTC,
-            lte: finDelDiaUTC, // Usar lte en lugar de lt
+            lte: finDelDiaUTC,
           },
         },
       },
@@ -259,7 +252,7 @@ export const getActividadReciente = async (req: Request, res: Response) => {
         incidencia.detalles.length > 0
           ? incidencia.detalles[0].estudiante.aula.nombre
           : null,
-      timestamp: incidencia.fecha.toLocaleString(),
+      timestamp: incidencia.fecha.toISOString(),
       fechaFormateada: incidencia.fecha.toLocaleDateString("es-ES", {
         day: "2-digit",
         month: "2-digit",
@@ -318,32 +311,24 @@ export const getEstadisticasProfesor = async (req: Request, res: Response) => {
       where: { aulaId: { in: aulaIds } },
     });
 
-    // Calcular el porcentaje de asistencia hoy
+    // Calcular el porcentaje de asistencia para el día de hoy en la zona horaria de la escuela.
+    const timeZone = process.env.TIMEZONE || "America/Lima";
     const fechaHoy = new Date();
 
-    const inicioDelDiaUTC = new Date(
-      Date.UTC(
-        fechaHoy.getFullYear(),
-        fechaHoy.getMonth(),
-        fechaHoy.getDate(),
-        0,
-        0,
-        0,
-        0
-      )
-    );
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
 
-    const finDelDiaUTC = new Date(
-      Date.UTC(
-        fechaHoy.getFullYear(),
-        fechaHoy.getMonth(),
-        fechaHoy.getDate(),
-        23,
-        59,
-        59,
-        999
-      )
-    );
+    const parts = formatter.formatToParts(fechaHoy);
+    const year = parseInt(parts.find((p) => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find((p) => p.type === "month")!.value, 10);
+    const day = parseInt(parts.find((p) => p.type === "day")!.value, 10);
+
+    const inicioDelDiaUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const finDelDiaUTC = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
     const asistenciasHoy = await prismadb.asistenciaDetalle.findMany({
       where: {
@@ -593,7 +578,7 @@ export const getActividadRecienteProfesor = async (
         incidencia.detalles.length > 0
           ? incidencia.detalles[0].estudiante.aula.nombre
           : null,
-      timestamp: incidencia.fecha.toLocaleString(),
+      timestamp: incidencia.fecha.toISOString(),
       fechaFormateada: incidencia.fecha.toLocaleDateString("es-ES", {
         day: "2-digit",
         month: "2-digit",

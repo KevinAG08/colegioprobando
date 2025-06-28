@@ -2,14 +2,14 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
-import authRoutes from './routes/auth';
-import adminRoutes from './routes/admin';
-import aulasRoutes from './routes/aula';
-import profesorRoutes from './routes/profesor';
-import estudianteRoutes from './routes/estudiante';
-import incidenciaRoutes from './routes/incidencia';
-import asistenciaRoutes from './routes/asistencia';
-import dashboardRoutes from './routes/dashboard';
+import authRoutes from '../routes/auth';
+import adminRoutes from '../routes/admin';
+import aulasRoutes from '../routes/aula';
+import profesorRoutes from '../routes/profesor';
+import estudianteRoutes from '../routes/estudiante';
+import incidenciaRoutes from '../routes/incidencia';
+import asistenciaRoutes from '../routes/asistencia';
+import dashboardRoutes from '../routes/dashboard';
 
 dotenv.config();
 

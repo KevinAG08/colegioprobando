@@ -124,22 +124,15 @@ export const refreshToken = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   try {
     const token = req.cookies.refreshToken;
-    console.log("Logout attempt. Received token cookie:", token ? "Token Present" : "No Token");
 
     if (token) {
-      const deleted = await prismadb.refreshToken.deleteMany({ where: { token } });
-      console.log(`Deleted ${deleted.count} refresh tokens from DB.`);
-    } else {
-      console.log("No refresh token cookie received, cannot delete from DB.");
+      await prismadb.refreshToken.deleteMany({ where: { token } });
     }
-
-    const isProduction = process.env.NODE_ENV === "production";
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      // Asegúrate de que estos flags coincidan con cómo se estableció la cookie
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
+      secure: false,
+      sameSite: "lax",
       path: "/",
     });
 

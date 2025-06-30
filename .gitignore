@@ -1,4 +1,3 @@
 server/node_modules
 server/.env
 server/generated
-server/prisma/migrations

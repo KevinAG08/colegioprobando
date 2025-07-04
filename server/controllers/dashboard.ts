@@ -13,51 +13,8 @@ export const getEstadisticas = async (req: Request, res: Response) => {
 
     const aulas = await prismadb.aula.count();
 
-    // Calcular el porcentaje de asistencia para el día de hoy en la zona horaria de la escuela.
-    // Esto soluciona el problema de que el servidor (a menudo en UTC) pase al día siguiente
-    // mientras que para el usuario todavía es el día actual.
-    const timeZone = process.env.TIMEZONE || "America/Lima"; // Usar variable de entorno o un valor por defecto
-    const fechaHoy = new Date();
-
-    const formatter = new Intl.DateTimeFormat("en-CA", { // en-CA da un formato predecible YYYY-MM-DD
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-
-    const parts = formatter.formatToParts(fechaHoy);
-    const year = parseInt(parts.find((p) => p.type === "year")!.value, 10);
-    const month = parseInt(parts.find((p) => p.type === "month")!.value, 10); // 1-based
-    const day = parseInt(parts.find((p) => p.type === "day")!.value, 10);
-
-    // Crear el rango del día en UTC para la consulta a la base de datos
-    const inicioDelDiaUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-    const finDelDiaUTC = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
-
-    const asistenciasHoy = await prismadb.asistenciaDetalle.findMany({
-      where: {
-        asistencia: {
-          fecha: {
-            gte: inicioDelDiaUTC,
-            lte: finDelDiaUTC,
-          },
-        },
-      },
-    });
-
-    const totalAsistencias = asistenciasHoy.length;
-    const presentes = asistenciasHoy.filter(
-      (asistencia) =>
-        asistencia.estado === "presente" ||
-        asistencia.estado === "tardanza" ||
-        asistencia.estado === "tardanza_justificada"
-    ).length;
-
-    const asistenciaHoy =
-      totalAsistencias > 0
-        ? Math.round((presentes / totalAsistencias) * 100)
-        : 0;
+    // Calcular el porcentaje de asistencia para la semana actual
+    const asistenciaSemana = await calcularAsistenciaSemana();
 
     const incidencias = await prismadb.incidencia.count();
 
@@ -65,7 +22,7 @@ export const getEstadisticas = async (req: Request, res: Response) => {
       estudiantes,
       profesores,
       aulas,
-      asistenciaHoy,
+      asistenciaSemana,
       incidencias,
     });
   } catch (error) {
@@ -74,27 +31,88 @@ export const getEstadisticas = async (req: Request, res: Response) => {
   }
 };
 
-export const getDistribucionAula = async (req: Request, res: Response) => {
-  try {
-    // Obtener todas las aulas
-    const aulas = await prismadb.aula.findMany({
-      select: {
-        id: true,
-        nombre: true,
+// Función auxiliar para calcular asistencia semanal
+const calcularAsistenciaSemana = async (profesorId?: string) => {
+  const timeZone = process.env.TIMEZONE || "America/Lima";
+  const hoy = new Date();
+  
+  // Obtener el lunes de la semana actual
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(hoy);
+  const year = parseInt(parts.find((p) => p.type === "year")!.value, 10);
+  const month = parseInt(parts.find((p) => p.type === "month")!.value, 10);
+  const day = parseInt(parts.find((p) => p.type === "day")!.value, 10);
+
+  const fechaActual = new Date(Date.UTC(year, month - 1, day));
+  const diaSemana = fechaActual.getUTCDay();
+  const diasParaLunes = diaSemana === 0 ? 6 : diaSemana - 1;
+  
+  const inicioSemana = new Date(fechaActual);
+  inicioSemana.setUTCDate(inicioSemana.getUTCDate() - diasParaLunes);
+  inicioSemana.setUTCHours(0, 0, 0, 0);
+  
+  const finSemana = new Date(inicioSemana);
+  finSemana.setUTCDate(finSemana.getUTCDate() + 6);
+  finSemana.setUTCHours(23, 59, 59, 999);
+
+  const whereClause: any = {
+    asistencia: {
+      fecha: {
+        gte: inicioSemana,
+        lte: finSemana,
       },
+    },
+  };
+
+  if (profesorId) {
+    whereClause.asistencia.profesorId = profesorId;
+  }
+
+  const asistenciasSemana = await prismadb.asistenciaDetalle.findMany({
+    where: whereClause,
+  });
+
+  const totalAsistencias = asistenciasSemana.length;
+  const presentes = asistenciasSemana.filter(
+    (asistencia) =>
+      asistencia.estado === "presente" ||
+      asistencia.estado === "tardanza" ||
+      asistencia.estado === "tardanza_justificada"
+  ).length;
+
+  return totalAsistencias > 0
+    ? Math.round((presentes / totalAsistencias) * 100)
+    : 0;
+};
+
+// Cambiado de getDistribucionAula a getDistribucionTipoIncidencia para admin
+export const getDistribucionTipoIncidencia = async (req: Request, res: Response) => {
+  try {
+    // Obtener todos los tipos de incidencias únicos
+    const tiposIncidencia = await prismadb.incidencia.findMany({
+      select: {
+        tipoIncidencia: true,
+      },
+      distinct: ['tipoIncidencia'],
     });
 
-    // Contar estudiantes por aula
+    // Contar incidencias por tipo
     const distribucion = await Promise.all(
-      aulas.map(async (aula) => {
-        const count = await prismadb.estudiante.count({
+      tiposIncidencia.map(async (tipo) => {
+        const count = await prismadb.incidencia.count({
           where: {
-            aulaId: aula.id,
+            tipoIncidencia: tipo.tipoIncidencia,
           },
         });
 
         return {
-          name: aula.nombre,
+          name: tipo.tipoIncidencia,
           value: count,
         };
       })
@@ -107,66 +125,61 @@ export const getDistribucionAula = async (req: Request, res: Response) => {
   }
 };
 
-export const getAsistenciaSemanal = async (req: Request, res: Response) => {
+// Cambiado de getAsistenciaSemanal a getAsistenciaMensual para admin
+export const getAsistenciaMensual = async (req: Request, res: Response) => {
   try {
     const hoy = new Date();
-
-    // Trabajar completamente en UTC para mantener consistencia
-    const inicioUTC = new Date(
-      Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate())
-    );
-    const diaSemana = inicioUTC.getUTCDay(); // 0 = domingo, 1 = lunes, etc.
-
-    // Calcular días para retroceder al lunes
-    const diasParaLunes = diaSemana === 0 ? 6 : diaSemana - 1;
-    inicioUTC.setUTCDate(inicioUTC.getUTCDate() - diasParaLunes);
-
-    // Generar fechas para los días de la semana
-    const dias = ["Lun", "Mar", "Mié", "Jue", "Vie"];
-    const fechas = dias.map((dia, index) => {
-      // Crear fecha de inicio del día en UTC
-      const fechaInicio = new Date(
-        Date.UTC(
-          inicioUTC.getUTCFullYear(),
-          inicioUTC.getUTCMonth(),
-          inicioUTC.getUTCDate() + index,
-          0,
-          0,
-          0,
-          0
-        )
-      );
-
-      // Crear fecha de fin del día en UTC
-      const fechaFin = new Date(
-        Date.UTC(
-          inicioUTC.getUTCFullYear(),
-          inicioUTC.getUTCMonth(),
-          inicioUTC.getUTCDate() + index,
-          23,
-          59,
-          59,
-          999
-        )
-      );
-
-      return {
-        dia,
-        fecha: fechaInicio,
-        fechaFin,
-      };
+    const timeZone = process.env.TIMEZONE || "America/Lima";
+    
+    // Obtener el primer día del mes actual
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
 
-    // Obtener datos de asistencia para cada día
-    const asistenciaSemanal = await Promise.all(
-      fechas.map(async ({ dia, fecha, fechaFin }) => {
-        // Obtener todas las asistencias del día
+    const parts = formatter.formatToParts(hoy);
+    const year = parseInt(parts.find((p) => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find((p) => p.type === "month")!.value, 10);
+
+    const primerDiaMes = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+    const ultimoDiaMes = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+    // Calcular las semanas del mes
+    const semanas = [];
+    let fechaActual = new Date(primerDiaMes);
+    let semanaNumero = 1;
+
+    while (fechaActual <= ultimoDiaMes) {
+      const inicioSemana = new Date(fechaActual);
+      const finSemana = new Date(fechaActual);
+      finSemana.setUTCDate(finSemana.getUTCDate() + 6);
+      
+      // Si la semana se extiende más allá del mes, ajustar al último día del mes
+      if (finSemana > ultimoDiaMes) {
+        finSemana.setTime(ultimoDiaMes.getTime());
+      }
+
+      semanas.push({
+        nombre: `Semana ${semanaNumero}`,
+        inicio: inicioSemana,
+        fin: finSemana,
+      });
+
+      fechaActual.setUTCDate(fechaActual.getUTCDate() + 7);
+      semanaNumero++;
+    }
+
+    // Obtener datos de asistencia para cada semana
+    const asistenciaMensual = await Promise.all(
+      semanas.map(async ({ nombre, inicio, fin }) => {
         const asistencias = await prismadb.asistenciaDetalle.findMany({
           where: {
             asistencia: {
               fecha: {
-                gte: fecha,
-                lte: fechaFin,
+                gte: inicio,
+                lte: fin,
               },
             },
           },
@@ -191,7 +204,7 @@ export const getAsistenciaSemanal = async (req: Request, res: Response) => {
         ).length;
 
         return {
-          day: dia,
+          week: nombre,
           presente,
           falta,
           faltaJustificada,
@@ -201,7 +214,7 @@ export const getAsistenciaSemanal = async (req: Request, res: Response) => {
       })
     );
 
-    res.status(200).json(asistenciaSemanal);
+    res.status(200).json(asistenciaMensual);
   } catch (error) {
     console.log("Error: ", error);
     res.status(500).json({ message: "Error interno del servidor" });
@@ -379,31 +392,29 @@ export const getDistribuciónTipoIncidenciaProfesor = async (
   try {
     const { profesorId } = req.params;
 
-    // Obtener todas las incidencias del profesor
-    const incidencias = await prismadb.incidencia.findMany({
+    // Obtener todas las incidencias del profesor con tipos únicos
+    const tiposIncidencia = await prismadb.incidencia.findMany({
       where: {
         userId: profesorId,
       },
-      include: {
-        detalles: {
-          include: {
-            estudiante: true,
-          },
-        },
+      select: {
+        tipoIncidencia: true,
       },
+      distinct: ['tipoIncidencia'],
     });
 
-    // Contar incidencias por tipo
+    // Contar incidencias por tipo para este profesor
     const distribucion = await Promise.all(
-      incidencias.map(async (incidencia) => {
-        const count = await prismadb.incidenciaDetalle.count({
+      tiposIncidencia.map(async (tipo) => {
+        const count = await prismadb.incidencia.count({
           where: {
-            incidenciaId: incidencia.id,
+            userId: profesorId,
+            tipoIncidencia: tipo.tipoIncidencia,
           },
         });
 
         return {
-          name: incidencia.tipoIncidencia,
+          name: tipo.tipoIncidencia,
           value: count,
         };
       })

@@ -194,6 +194,7 @@ export const IncidenciasExport = () => {
   const exportToPDF = () => {
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
 
     // Título del documento
     pdf.setFontSize(18);
@@ -246,7 +247,7 @@ export const IncidenciasExport = () => {
             year: "numeric",
             timeZone: "UTC",
           });
-          fechaFormateada += fechaFormateada += " a las ";
+          fechaFormateada += " a las ";
           fechaFormateada += dateObject.toLocaleTimeString("es-ES", {
             hour: "2-digit",
             minute: "2-digit",
@@ -312,101 +313,144 @@ export const IncidenciasExport = () => {
         // Agregar número de página
         pdf.setFontSize(10);
         pdf.text(
-          `Página ${data.pageNumber} de ${pdf.getNumberOfPages()}`,
+          `Página ${data.pageNumber}`,
           pageWidth - 20,
-          pdf.internal.pageSize.getHeight() - 10,
+          pageHeight - 10,
           { align: "right" }
         );
       },
     });
 
-    // Para cada incidencia, agregar una página detallada
-    filteredIncidencias.forEach((incidencia, index) => {
+    // MODIFICACIÓN PRINCIPAL: Agregar detalles de incidencias de forma consecutiva
+    if (filteredIncidencias.length > 0) {
       pdf.addPage();
+      
+      // Título de sección detallada
+      pdf.setFontSize(16);
+      pdf.text("Detalles de Incidencias", pageWidth / 2, 20, { align: "center" });
+      
+      let currentY = 35;
+      const marginLeft = 14;
+      const marginRight = 14;
+      const lineHeight = 5;
+      const sectionSpacing = 15;
 
-      let fechaFormateada = "N/A";
-      if (incidencia.fecha) {
-        const dateObject = new Date(incidencia.fecha);
-        if (!isNaN(dateObject.getTime())) {
-          fechaFormateada = dateObject.toLocaleDateString("es-ES", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            timeZone: "UTC",
-          });
-          fechaFormateada += " a las ";
-          fechaFormateada += dateObject.toLocaleTimeString("es-ES", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-            timeZone: "UTC",
-          });
+      filteredIncidencias.forEach((incidencia, index) => {
+        // Verificar si necesitamos una nueva página
+        if (currentY > pageHeight - 60) {
+          pdf.addPage();
+          currentY = 20;
         }
-      }
 
-      // Título de la incidencia
-      pdf.setFontSize(14);
-      pdf.text(`Incidencia #${index + 1}`, pageWidth / 2, 20, {
-        align: "center",
+        let fechaFormateada = "N/A";
+        if (incidencia.fecha) {
+          const dateObject = new Date(incidencia.fecha);
+          if (!isNaN(dateObject.getTime())) {
+            fechaFormateada = dateObject.toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              timeZone: "UTC",
+            });
+            fechaFormateada += " a las ";
+            fechaFormateada += dateObject.toLocaleTimeString("es-ES", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+              timeZone: "UTC",
+            });
+          }
+        }
+
+        // Título de la incidencia
+        pdf.setFontSize(12);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`${index + 1}. ${incidencia.tipoIncidencia || "Sin tipo"}`, marginLeft, currentY);
+        currentY += lineHeight + 2;
+
+        // Información básica en una línea
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        const infoBasica = `${fechaFormateada} | ${incidencia.lugar || "N/A"}`;
+        pdf.text(infoBasica, marginLeft, currentY);
+        currentY += lineHeight;
+
+        // Estudiantes involucrados
+        const nombresEstudiantes = incidencia.detalles
+          .map(
+            (detalle) =>
+              `${detalle.estudiante.nombres} ${detalle.estudiante.apellidos}`
+          )
+          .join(", ");
+
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Estudiantes:", marginLeft, currentY);
+        pdf.setFont("helvetica", "normal");
+        
+        const estudiantesLines = pdf.splitTextToSize(
+          nombresEstudiantes,
+          pageWidth - marginLeft - marginRight - 20
+        );
+        pdf.text(estudiantesLines, marginLeft + 20, currentY);
+        currentY += estudiantesLines.length * lineHeight;
+
+        // Aulas
+        const aulasNombres = obtenerAulasDeIncidencia(incidencia);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Aulas:", marginLeft, currentY);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(aulasNombres, marginLeft + 20, currentY);
+        currentY += lineHeight;
+
+        // Descripción
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Descripción:", marginLeft, currentY);
+        currentY += lineHeight;
+        
+        pdf.setFont("helvetica", "normal");
+        const descripcionLines = pdf.splitTextToSize(
+          incidencia.descripcion || "No hay descripción disponible",
+          pageWidth - marginLeft - marginRight
+        );
+        pdf.text(descripcionLines, marginLeft, currentY);
+        currentY += descripcionLines.length * lineHeight;
+
+        // Medidas adoptadas
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Medidas adoptadas:", marginLeft, currentY);
+        currentY += lineHeight;
+        
+        pdf.setFont("helvetica", "normal");
+        const medidasLines = pdf.splitTextToSize(
+          incidencia.medidasAdoptadas || "No hay medidas registradas",
+          pageWidth - marginLeft - marginRight
+        );
+        pdf.text(medidasLines, marginLeft, currentY);
+        currentY += medidasLines.length * lineHeight;
+
+        // Separador entre incidencias
+        currentY += sectionSpacing;
+        
+        // Línea divisoria (opcional)
+        if (index < filteredIncidencias.length - 1) {
+          pdf.setDrawColor(200, 200, 200);
+          pdf.line(marginLeft, currentY - 5, pageWidth - marginRight, currentY - 5);
+        }
       });
 
-      // Información básica
-      pdf.setFontSize(11);
-      pdf.text(`Fecha: ${fechaFormateada}`, 14, 30);
-      pdf.text(`Lugar: ${incidencia.lugar || "N/A"}`, 14, 37);
-      pdf.text(`Tipo: ${incidencia.tipoIncidencia || "N/A"}`, 14, 44);
-
-      // Estudiantes involucrados
-      const nombresEstudiantes = incidencia.detalles
-        .map(
-          (detalle) =>
-            `${detalle.estudiante.nombres} ${detalle.estudiante.apellidos}`
-        )
-        .join(", ");
-
-      pdf.text(`Estudiantes: ${nombresEstudiantes}`, 14, 51);
-
-      // CAMBIO: Mostrar todas las aulas
-      const aulasNombres = obtenerAulasDeIncidencia(incidencia);
-      pdf.text(`Aulas: ${aulasNombres}`, 14, 58);
-
-      // Descripción completa (texto largo)
-      pdf.setFontSize(12);
-      pdf.text("Descripción:", 14, 70);
-
-      // Manejar texto largo con saltos de línea automáticos
-      const splitDescription = pdf.splitTextToSize(
-        incidencia.descripcion || "No hay descripción disponible",
-        pageWidth - 28
-      );
-
-      pdf.setFontSize(10);
-      pdf.text(splitDescription, 14, 78);
-
-      // Calcular posición Y después de la descripción
-      const descriptionEndY = 78 + splitDescription.length * 5;
-
-      // Medidas adoptadas (texto largo)
-      pdf.setFontSize(12);
-      pdf.text("Medidas Adoptadas:", 14, descriptionEndY + 10);
-
-      const splitMedidas = pdf.splitTextToSize(
-        incidencia.medidasAdoptadas || "No hay medidas registradas",
-        pageWidth - 28
-      );
-
-      pdf.setFontSize(10);
-      pdf.text(splitMedidas, 14, descriptionEndY + 18);
-
-      // Agregar pie de página en cada página detallada
-      pdf.setFontSize(10);
-      pdf.text(
-        `Página ${pdf.getNumberOfPages()} de ${filteredIncidencias.length + 1}`,
-        pageWidth - 20,
-        pdf.internal.pageSize.getHeight() - 10,
-        { align: "right" }
-      );
-    });
+      // Agregar numeración de páginas en todas las páginas
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.text(
+          `Página ${i} de ${totalPages}`,
+          pageWidth - 20,
+          pageHeight - 10,
+          { align: "right" }
+        );
+      }
+    }
 
     // Guardar el PDF
     pdf.save(`Informe_Incidencias_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);

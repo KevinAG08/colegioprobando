@@ -11,21 +11,21 @@ export const useEstadisticas = () => {
   });
 };
 
-export const useDistribucionAula = () => {
+export const useDistribucionIncidencia = () => {
   return useQuery({
-    queryKey: ["distribucion-aula"],
+    queryKey: ["distribucion-incidencia"],
     queryFn: async () => {
-      const response = await api.get("/dashboard/distribucion-aula");
+      const response = await api.get("/dashboard/distribucion-incidencia");
       return response.data;
     },
   });
 };
 
-export const useAsistenciaSemanal = () => {
+export const useAsistenciaMensual = () => {
   return useQuery({
-    queryKey: ["asistencia-semanal"],
+    queryKey: ["asistencia-mensual"],
     queryFn: async () => {
-      const response = await api.get("/dashboard/asistencia-semanal");
+      const response = await api.get("/dashboard/asistencia-mensual");
       return response.data;
     },
   });

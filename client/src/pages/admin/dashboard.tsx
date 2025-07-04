@@ -1,15 +1,15 @@
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Users, UserPlus, School, CalendarCheck, AlertCircle, FileText } from 'lucide-react';
-import { useEstadisticas, useAsistenciaSemanal, useActividadReciente, useDistribucionAula } from "@/hooks/useDashboard";
+import { useEstadisticas, useAsistenciaMensual, useActividadReciente, useDistribucionIncidencia } from "@/hooks/useDashboard";
 
 const DashboardAdmin = () => {
   const { user } = useAuth();
   
   // Obtener datos usando los hooks personalizados con React Query
   const { data: estadisticas, isLoading: estadisticasLoading } = useEstadisticas();
-  const { data: distribucionAula, isLoading: distribucionAulaLoading } = useDistribucionAula();
-  const { data: asistenciaSemanal, isLoading: asistenciaLoading } = useAsistenciaSemanal();
+  const { data: distribucionIncidencia, isLoading: distribucionIncidenciaLoading } = useDistribucionIncidencia();
+  const { data: asistenciaMensual, isLoading: asistenciaLoading } = useAsistenciaMensual();
   const { data: actividadReciente, isLoading: actividadLoading } = useActividadReciente();
   
   // Datos fallback en caso de carga o error
@@ -21,7 +21,7 @@ const DashboardAdmin = () => {
     incidencias: 0
   };
   
-  const distribucionAulaFallback = [
+  const distribucionIncidenciaFallback = [
     { name: '1°A', value: 0 },
     { name: '1°B', value: 0 },
     { name: '2°A', value: 0 },
@@ -30,7 +30,7 @@ const DashboardAdmin = () => {
     { name: '3°B', value: 0 }
   ];
 
-  const asistenciaSemanalFallback = [
+  const asistenciaMensualFallback = [
     { day: 'Lun', presente: 0, falta: 0 },
     { day: 'Mar', presente: 0, falta: 0 },
     { day: 'Mié', presente: 0, falta: 0 },
@@ -114,9 +114,9 @@ const DashboardAdmin = () => {
               <CalendarCheck className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Asistencia hoy</p>
+              <p className="text-sm text-gray-500">Asistencia semanal</p>
               <h3 className="text-xl font-bold">
-                {estadisticasLoading ? '...' : `${estadisticas?.asistenciaHoy || estadisticasFallback.asistenciaHoy}%`}
+                {estadisticasLoading ? '...' : `${estadisticas?.asistenciaSemana || estadisticasFallback.asistenciaHoy}%`}
               </h3>
             </div>
           </div>
@@ -136,11 +136,11 @@ const DashboardAdmin = () => {
         
         {/* Gráficos y estadísticas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Distribución por nivel */}
+          {/* Distribución por tipo de incidencia */}
            <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">Distribución por Aula</h3>
+            <h3 className="text-lg font-semibold mb-4">Distribución por Tipo de Incidencia</h3>
             <div className="h-64">
-              {distribucionAulaLoading ? (
+              {distribucionIncidenciaLoading ? (
                 <div className="h-full flex items-center justify-center">
                   <p className="text-gray-500">Cargando datos...</p>
                 </div>
@@ -148,7 +148,7 @@ const DashboardAdmin = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={distribucionAula || distribucionAulaFallback}
+                      data={distribucionIncidencia || distribucionIncidenciaFallback}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -157,8 +157,8 @@ const DashboardAdmin = () => {
                       dataKey="value"
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     > 
-                      {(distribucionAula || distribucionAulaFallback).map((_: number, index: number) => (   
-                        <Cell key={`cell-${index}`} fill={generateColors((distribucionAula || distribucionAulaFallback).length)[index]} /> 
+                      {(distribucionIncidencia || distribucionIncidenciaFallback).map((_: number, index: number) => (   
+                        <Cell key={`cell-${index}`} fill={generateColors((distribucionIncidencia || distribucionIncidenciaFallback).length)[index]} /> 
                       ))}
                     </Pie>
                     <Tooltip />
@@ -168,9 +168,9 @@ const DashboardAdmin = () => {
             </div>
           </div>
           
-          {/* Asistencia semanal */}
+          {/* Asistencia mensual */}
           <div className="bg-white rounded-lg shadow p-4 col-span-1 lg:col-span-2">
-            <h3 className="text-lg font-semibold mb-4">Asistencia Semanal</h3>
+            <h3 className="text-lg font-semibold mb-4">Asistencia Mensual</h3>
             <div className="h-64">
               {asistenciaLoading ? (
                 <div className="h-full flex items-center justify-center">
@@ -179,11 +179,11 @@ const DashboardAdmin = () => {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={asistenciaSemanal || asistenciaSemanalFallback}
+                    data={asistenciaMensual || asistenciaMensualFallback}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
+                    <XAxis dataKey="week" />
                     <YAxis />
                     <Tooltip />
                     <Bar dataKey="presente" fill="#4ade80" name="Presente" />

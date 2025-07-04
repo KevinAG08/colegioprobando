@@ -34,6 +34,9 @@ export const saveAsistencias = async (req: Request, res: Response) => {
       },
     });
 
+    // Se utiliza una transacción para agrupar todas las operaciones de base de datos.
+    // Esto garantiza que o todas las operaciones (borrar detalles, crear/actualizar registro) tienen éxito,
+    // o si una falla, todas las anteriores se revierten. Así se evita dejar la base de datos en un estado inconsistente.
     const result = await prismadb.$transaction(async (prisma) => {
       let asistenciaId;
 
